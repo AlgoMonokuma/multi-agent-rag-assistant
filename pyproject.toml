@@ -1,0 +1,31 @@
+[project]
+name = "multi-agent-rag-assistant"
+version = "0.1.0"
+description = "AI knowledge work assistant with RAG, multi-agent orchestration, and streaming UI."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115.0",
+  "langgraph>=0.2.0",
+  "pydantic-settings>=2.6.0",
+  "streamlit>=1.42.0",
+  "uvicorn>=0.34.0",
+]
+
+[dependency-groups]
+dev = [
+  "httpx>=0.28.0",
+  "pytest>=8.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["api*", "app*", "core*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
