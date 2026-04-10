@@ -1,12 +1,13 @@
-"""FastAPI application entrypoint."""
+"""FastAPI 應用程式進入點。"""
 
 from fastapi import FastAPI
 
 from core.config import settings
+from core.log import logger
 
 
 def create_app() -> FastAPI:
-    """Build the API application instance."""
+    """建立 API 應用程式實體。"""
     app = FastAPI(
         title="AI Knowledge Work Assistant API",
         version="0.1.0",
@@ -14,7 +15,7 @@ def create_app() -> FastAPI:
 
     @app.get("/health")
     def health_check() -> dict[str, str]:
-        """Return a lightweight readiness signal."""
+        """回傳簡單的存活狀態檢查。"""
         return {"status": "ok"}
 
     return app
@@ -24,7 +25,8 @@ app = create_app()
 
 
 def run() -> None:
-    """Run the local development API server."""
+    """啟動本地端開發用 API 伺服器。"""
+    logger.info(f"啟動 FastAPI 伺服器於 {settings.app_host}:{settings.app_port}")
     import uvicorn
 
     uvicorn.run(
