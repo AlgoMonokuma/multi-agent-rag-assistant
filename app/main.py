@@ -1,12 +1,14 @@
-"""Streamlit application entrypoint."""
+"""Streamlit 應用程式進入點。"""
 
 import streamlit as st
 
 from core.config import settings
+from core.log import logger
 
 
 def main() -> None:
-    """Render the bootstrap frontend page."""
+    """渲染初始前端頁面。"""
+    logger.info("初始化 Streamlit 應用程式。")
     st.set_page_config(
         page_title="AI Knowledge Work Assistant",
         layout="wide",
