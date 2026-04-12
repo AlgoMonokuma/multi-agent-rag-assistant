@@ -1,1 +1,5 @@
-"""RAG (Retrieval-Augmented Generation) 核心模組。"""
+"""RAG 核心模組。"""
+
+from core.rag.indexer import IndexerException, SessionIndexRecord, SessionIndexer
+
+__all__ = ["IndexerException", "SessionIndexRecord", "SessionIndexer"]
