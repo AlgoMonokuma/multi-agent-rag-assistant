@@ -7,8 +7,11 @@ requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115.0",
   "faiss-cpu>=1.13.0",
+  "langchain-text-splitters>=0.3.0",
   "langgraph>=0.2.0",
+  "numpy>=2.0.0",
   "pydantic-settings>=2.6.0",
+  "sentence-transformers>=3.0.0",
   "streamlit>=1.42.0",
   "uvicorn>=0.34.0",
   "pypdf>=4.0.0",
