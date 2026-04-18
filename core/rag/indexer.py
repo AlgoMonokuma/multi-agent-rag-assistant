@@ -1,4 +1,4 @@
-"""管理 Session 隔離 RAG 索引的核心模組。"""
+"""提供 Session 隔離的 RAG 索引管理能力。"""
 
 from __future__ import annotations
 
@@ -7,27 +7,30 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Sequence
 from uuid import uuid4
 
+import numpy as np
+
 from core.log import logger
 from core.rag.parser import ParsedDocument
 
 
 class IndexerException(Exception):
-    """Session 索引器相關錯誤。"""
+    """Session 索引相關錯誤。"""
 
 
 @dataclass(slots=True)
 class SessionIndexRecord:
-    """描述單一 Session 的索引與 metadata 狀態。"""
+    """保存單一 Session 的索引與中繼資料狀態。"""
 
     session_id: str
     index: Any
     created_at: datetime
     chunk_map: Dict[str, ParsedDocument] = field(default_factory=dict)
     metadata_map: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    vector_chunk_ids: List[str] = field(default_factory=list)
 
 
 class SessionIndexer:
-    """提供 Session 級別的索引建立、metadata 存取與清理。"""
+    """管理 Session 專屬的 FAISS 索引與 Chunk 對應資訊。"""
 
     def __init__(
         self,
@@ -38,14 +41,14 @@ class SessionIndexer:
         self._sessions: Dict[str, SessionIndexRecord] = {}
 
     def create_session(self) -> SessionIndexRecord:
-        """建立新的 Session 與對應索引。"""
+        """建立新的 Session 索引記錄。"""
         session_id = str(uuid4())
 
         try:
             index = self._index_factory()
         except Exception as error:
             logger.error("建立 Session 索引失敗: %s", error)
-            raise IndexerException("無法建立 Session 專屬索引。") from error
+            raise IndexerException("無法建立 Session 索引。") from error
 
         record = SessionIndexRecord(
             session_id=session_id,
@@ -57,7 +60,7 @@ class SessionIndexer:
         return record
 
     def get_session(self, session_id: str) -> SessionIndexRecord:
-        """取得既有 Session 記錄。"""
+        """取得指定 Session 記錄。"""
         return self._require_session(session_id)
 
     def store_documents(
@@ -65,30 +68,70 @@ class SessionIndexer:
         session_id: str,
         documents: Sequence[ParsedDocument],
     ) -> List[str]:
-        """儲存文件與 metadata 映射，並自動附加 Session 資訊。"""
+        """只儲存 Chunk 與 metadata，不寫入向量索引。"""
         record = self._require_session(session_id)
         stored_chunk_ids: List[str] = []
 
         for document in documents:
-            chunk_id = f"chunk-{len(record.chunk_map) + 1}"
-            metadata = dict(document.metadata)
-            metadata["chunk_id"] = chunk_id
-            metadata["session_id"] = session_id
-
-            stored_document = ParsedDocument(
-                page_content=document.page_content,
-                metadata=metadata,
+            chunk_id = self._build_next_chunk_id(record)
+            stored_document = self._build_stored_document(
+                session_id=session_id,
+                chunk_id=chunk_id,
+                document=document,
             )
-            record.chunk_map[chunk_id] = stored_document
-            record.metadata_map[chunk_id] = dict(metadata)
+            self._store_chunk(record, chunk_id, stored_document)
             stored_chunk_ids.append(chunk_id)
 
         logger.info(
-            "Session %s 已儲存 %s 筆文件 metadata。",
+            "Session %s 已暫存 %s 筆 Chunk metadata。",
             session_id,
             len(stored_chunk_ids),
         )
         return stored_chunk_ids
+
+    def ingest_chunk_embeddings(
+        self,
+        session_id: str,
+        documents: Sequence[ParsedDocument],
+        embeddings: Sequence[Sequence[float]],
+    ) -> List[str]:
+        """以原子方式寫入 Chunk metadata 與對應向量。"""
+        record = self._require_session(session_id)
+        embedding_matrix = self._normalize_embeddings(embeddings)
+
+        if len(documents) != int(embedding_matrix.shape[0]):
+            raise IndexerException("文件數量與向量數量不一致。")
+
+        prepared_documents: List[tuple[str, ParsedDocument]] = []
+        for document in documents:
+            chunk_id = self._build_next_chunk_id(record, extra_offset=len(prepared_documents))
+            prepared_documents.append(
+                (
+                    chunk_id,
+                    self._build_stored_document(
+                        session_id=session_id,
+                        chunk_id=chunk_id,
+                        document=document,
+                    ),
+                )
+            )
+
+        try:
+            record.index.add(embedding_matrix)
+        except Exception as error:
+            logger.error("Session %s 寫入 FAISS 索引失敗: %s", session_id, error)
+            raise IndexerException("寫入 FAISS 索引失敗。") from error
+
+        for chunk_id, stored_document in prepared_documents:
+            self._store_chunk(record, chunk_id, stored_document)
+            record.vector_chunk_ids.append(chunk_id)
+
+        logger.info(
+            "Session %s 已寫入 %s 筆 Chunk 與向量。",
+            session_id,
+            len(prepared_documents),
+        )
+        return [chunk_id for chunk_id, _ in prepared_documents]
 
     def get_chunk_metadata(self, session_id: str, chunk_id: str) -> Dict[str, Any]:
         """取得指定 Session 內單一 Chunk 的 metadata。"""
@@ -107,11 +150,34 @@ class SessionIndexer:
         record = self._require_session(session_id)
         return [dict(metadata) for metadata in record.metadata_map.values()]
 
+    def get_chunk_id_by_ordinal(self, session_id: str, ordinal: int) -> str:
+        """依照 FAISS 向量順序取得對應的 chunk_id。"""
+        record = self._require_session(session_id)
+
+        if ordinal < 0:
+            logger.error("Session %s 收到無效 ordinal: %s", session_id, ordinal)
+            raise IndexerException(
+                f"Session {session_id} 查無對應的 ordinal: {ordinal}"
+            )
+
+        try:
+            return record.vector_chunk_ids[ordinal]
+        except IndexError as error:
+            logger.error("Session %s 查無 ordinal: %s", session_id, ordinal)
+            raise IndexerException(
+                f"Session {session_id} 查無對應的 ordinal: {ordinal}"
+            ) from error
+
+    def list_vector_chunk_ids(self, session_id: str) -> List[str]:
+        """列出指定 Session 目前的向量順序映射。"""
+        record = self._require_session(session_id)
+        return list(record.vector_chunk_ids)
+
     def cleanup_session(self, session_id: str) -> None:
-        """移除 Session 索引與相關 metadata。"""
+        """清除 Session 索引與 metadata。"""
         self._require_session(session_id)
         del self._sessions[session_id]
-        logger.info("已清理 Session 索引: %s", session_id)
+        logger.info("已清除 Session 索引: %s", session_id)
 
     def _require_session(self, session_id: str) -> SessionIndexRecord:
         """驗證 Session 是否存在。"""
@@ -120,6 +186,55 @@ class SessionIndexer:
             logger.error("查無 Session 索引: %s", session_id)
             raise IndexerException(f"查無 Session 索引: {session_id}")
         return record
+
+    def _build_next_chunk_id(
+        self,
+        record: SessionIndexRecord,
+        extra_offset: int = 0,
+    ) -> str:
+        """依照目前記錄產生下一個 chunk_id。"""
+        return f"chunk-{len(record.chunk_map) + extra_offset + 1}"
+
+    def _build_stored_document(
+        self,
+        session_id: str,
+        chunk_id: str,
+        document: ParsedDocument,
+    ) -> ParsedDocument:
+        """建立由索引器控管的 Chunk 文件。"""
+        metadata = dict(document.metadata)
+        metadata["chunk_id"] = chunk_id
+        metadata["session_id"] = session_id
+
+        return ParsedDocument(
+            page_content=document.page_content,
+            metadata=metadata,
+        )
+
+    def _store_chunk(
+        self,
+        record: SessionIndexRecord,
+        chunk_id: str,
+        document: ParsedDocument,
+    ) -> None:
+        """將 Chunk 與 metadata 寫入 Session 記錄。"""
+        record.chunk_map[chunk_id] = document
+        record.metadata_map[chunk_id] = dict(document.metadata)
+
+    @staticmethod
+    def _normalize_embeddings(
+        embeddings: Sequence[Sequence[float]],
+    ) -> np.ndarray:
+        """將嵌入向量轉為 FAISS 可接受的矩陣格式。"""
+        try:
+            matrix = np.asarray(embeddings, dtype=np.float32)
+        except Exception as error:
+            raise IndexerException("嵌入向量無法轉為 float32 矩陣。") from error
+
+        if matrix.ndim != 2:
+            raise IndexerException("嵌入向量必須是二維矩陣。")
+
+        return matrix
 
     @staticmethod
     def _create_default_faiss_index() -> Any:
