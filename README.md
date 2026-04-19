@@ -104,12 +104,14 @@ tests/unit/         設定與核心邏輯的單元測試
 tests/integration/  API 與跨模組整合測試
 ```
 
-## Engineering Rules
+## Development Principles
 
-- 程式碼註解與 docstrings 使用繁體中文
-- 敏感資訊透過環境變數管理，不提交至版本庫
-- 變更需附帶對應測試或驗證方式
-- 優先維持可讀性、可測試性與模組邊界清晰
+- 程式碼註解與 docstrings 以繁體中文為主
+- 敏感資訊使用環境變數管理，不提交至版本庫
+- 每次變更都應附帶對應測試或明確驗證方式
+- 優先維持可讀性、可測試性與清楚的模組邊界
+
+更完整的協作與提交流程請參考 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
 ## Roadmap
 
