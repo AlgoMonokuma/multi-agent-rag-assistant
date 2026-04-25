@@ -173,6 +173,23 @@ class SessionIndexer:
         record = self._require_session(session_id)
         return list(record.vector_chunk_ids)
 
+    def get_chunk_document(self, session_id: str, chunk_id: str) -> ParsedDocument:
+        """取得指定 Session 內單一 Chunk 的完整 ParsedDocument。"""
+        record = self._require_session(session_id)
+
+        if chunk_id not in record.chunk_map:
+            logger.error("Session %s 查無 chunk_id: %s", session_id, chunk_id)
+            raise IndexerException(
+                f"Session {session_id} 查無對應的 chunk_id: {chunk_id}"
+            )
+
+        return record.chunk_map[chunk_id]
+
+    def list_chunk_documents(self, session_id: str) -> List[ParsedDocument]:
+        """列出指定 Session 的所有 Chunk ParsedDocument。"""
+        record = self._require_session(session_id)
+        return list(record.chunk_map.values())
+
     def cleanup_session(self, session_id: str) -> None:
         """清除 Session 索引與 metadata。"""
         self._require_session(session_id)

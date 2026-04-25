@@ -14,6 +14,12 @@ from core.rag.embeddings import (
 )
 from core.rag.indexer import IndexerException, SessionIndexRecord, SessionIndexer
 from core.rag.pipeline import IngestionResult, ingest_documents
+from core.rag.retriever import (
+    HybridRetriever,
+    HybridSearchResult,
+    RetrievedChunk,
+    RetrieverException,
+)
 
 __all__ = [
     "ChunkingException",
@@ -22,11 +28,16 @@ __all__ = [
     "DEFAULT_EMBEDDING_DIMENSION",
     "DEFAULT_EMBEDDING_MODEL",
     "EmbeddingException",
+    "HybridRetriever",
+    "HybridSearchResult",
     "IndexerException",
     "IngestionResult",
+    "RetrievedChunk",
+    "RetrieverException",
     "SentenceTransformerEmbedder",
     "SessionIndexRecord",
     "SessionIndexer",
     "TextChunker",
     "ingest_documents",
 ]
+
