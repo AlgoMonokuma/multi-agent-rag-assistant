@@ -1,149 +1,95 @@
 # AI Knowledge Work Assistant
 
-AI Knowledge Work Assistant 是一個面向知識工作場景的研究與問答系統，聚焦於文件解析、混合檢索、多代理協作與即時回應呈現。系統目標是讓使用者可以上傳資料、提出問題，並取得具來源引用的結構化回答。
-
-## Project Status
-
-目前專案處於開發啟動階段，已完成產品需求、系統設計與開發拆解，並已建立 FastAPI / Streamlit 基礎骨架與初始測試。
+一個針對知識工作場景設計的文件問答系統。使用者上傳文件後，系統透過混合檢索（向量 + 關鍵字）找出相關段落，再交由 LLM 生成具來源引用的結構化回答。
 
 ## Core Capabilities
 
-- 多格式文件匯入與解析，支援 PDF 與 Markdown
-- Hybrid Search 檢索流程，結合向量搜尋與關鍵字搜尋
-- 多代理工作流，支援研究、整理、產出與審核任務
-- 即時串流回應，呈現處理進度與最終答案
-- 引用追蹤與 Markdown 呈現，強化答案可驗證性
+- PDF 與 Markdown 文件解析
+- 以 FAISS 為底層的 Session 隔離向量索引
+- Hybrid Search：向量搜尋（sentence-transformers）+ BM25 關鍵字搜尋
+- 多代理工作流（LangGraph）：研究、整理、產出、審核
+- 即時串流回應（SSE）與引用來源追蹤
 
 ## Tech Stack
 
-- Backend: FastAPI
-- Frontend: Streamlit
-- Workflow Orchestration: LangGraph
-- LLM Provider: Groq
-- Vector Store: FAISS
-- Embeddings: sentence-transformers
-- Testing: pytest
-- Dependency Management: uv
-- Deployment: Docker, GitHub Actions, Hugging Face Spaces
+| 類別 | 技術 |
+|---|---|
+| Backend | FastAPI + Async IO |
+| Frontend | Streamlit |
+| Workflow | LangGraph |
+| LLM | Groq API |
+| Vector Store | FAISS (In-memory, per-session) |
+| Embeddings | sentence-transformers |
+| Testing | pytest |
+| Dependency | uv |
+| Deployment | Docker, GitHub Actions, Hugging Face Spaces |
 
-## Repository Status
-
-目前 repository 已建立以下工程基礎：
-
-- Git version control
-- `.gitignore`
-- `.gitattributes`
-- `.editorconfig`
-- `pyproject.toml`
-- `.env.example`
-- `app / api / core / tests` 專案骨架
-- 初始 pytest 測試
-
-## Planned Structure
+## Project Structure
 
 ```text
-app/
-api/
-core/
-tests/
-docs/
+core/rag/
+  parser.py       ✅ PDF / Markdown 解析
+  chunker.py      ✅ RecursiveCharacterTextSplitter 分塊
+  embeddings.py   ✅ sentence-transformers 向量化
+  indexer.py      ✅ Session 隔離 FAISS 索引管理
+  retriever.py    ✅ Hybrid Search (向量 + BM25)
+  pipeline.py     ✅ 文件攝入管線
+
+app/              前端 Streamlit（開發中）
+api/              FastAPI 路由（開發中）
+tests/            49 個單元與整合測試全數通過
 ```
 
 ## Quick Start
 
-### Environment
-
-- Python 3.11+
-- 已安裝 `uv`
-
-### Local Setup
-
 ```bash
+# 安裝依賴
 uv sync --group dev
-```
 
-```bash
+# 複製環境設定
 copy .env.example .env
 ```
 
-### Run Backend
-
 ```bash
+# 啟動後端
 uv run python -m api.main
-```
+# http://127.0.0.1:8000/health
 
-開啟：
-
-```text
-http://127.0.0.1:8000/health
-http://127.0.0.1:8000/docs
-```
-
-### Run Frontend
-
-```bash
+# 啟動前端
 uv run streamlit run app/main.py
-```
+# http://localhost:8501
 
-開啟：
-
-```text
-http://localhost:8501
-```
-
-### Run Tests
-
-```bash
+# 執行測試
 uv run pytest
 ```
 
-目前測試結構：
+## Architecture Notes
 
-```text
-tests/unit/         設定與核心邏輯的單元測試
-tests/integration/  API 與跨模組整合測試
-```
+系統採用 **In-memory FAISS per-session** 的設計：每個使用者對話建立獨立的 FAISS 索引，避免不同使用者的文件語意互相污染，並在對話生命週期結束後自動釋放記憶體。
+
+若需支援更大規模的部署：
+
+| 層面 | 當前設計 | 可能的演進方向 |
+|---|---|---|
+| 向量儲存 | FAISS In-memory | Milvus 叢集 / Pinecone |
+| Session 持久化 | 記憶體存活期間 | FAISS index 序列化 + TTL |
+| 水平擴展 | 單節點 Async IO | Kubernetes + Load Balancer |
 
 ## Development Principles
 
-- 程式碼註解與 docstrings 以繁體中文為主
-- 敏感資訊使用環境變數管理，不提交至版本庫
-- 每次變更都應附帶對應測試或明確驗證方式
-- 優先維持可讀性、可測試性與清楚的模組邊界
+- 程式碼註解與 docstrings 以繁體中文撰寫
+- 敏感資訊以環境變數管理，不提交至版本庫
+- 每次功能變更須附帶對應單元測試
+- 模組邊界清楚，RAG 邏輯不散落至 API 或 UI 層
 
-更完整的協作與提交流程請參考 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+詳見 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
 ## Roadmap
 
-### v0.1
-
-- 建立專案骨架與依賴管理
-- 建立測試框架與品質工具
-- 建立設定載入與日誌機制
-
-### v0.2
-
-- 完成文件解析、分塊與索引
-- 完成混合檢索與重排序流程
-
-### v0.3
-
-- 完成多代理工作流與外部工具整合
-- 完成即時串流 UI 與引用互動
-
-### v1.0
-
-- 完成部署、自動化流程與展示版本
-
-## Architecture & Scalability Notes
-
-目前 MVP 使用 **FastAPI（非同步架構）** 搭配 **In-memory FAISS** 實現 Session 隔離的低延遲向量檢索。
-
-| 層面 | MVP 當前設計 | 若需大規模擴展 |
+| 版本 | 目標 | 狀態 |
 |---|---|---|
-| 向量儲存 | FAISS (In-memory, per-session) | 抽換為 Milvus 叢集 或 Pinecone 雲端服務 |
-| Session 持久化 | 記憶體存活期間 | FAISS index 序列化落地硬碟 + TTL 機制 |
-| 併發處理 | FastAPI Async IO (單節點) | Kubernetes 水平擴展 + Load Balancer |
-| LLM 費用控制 | 使用免費開源模型 (Groq API) | 視需求導入 Semantic Cache 層 |
+| v0.1 | 專案骨架、測試框架、設定與日誌 | ✅ 完成 |
+| v0.2 | 文件解析、分塊、索引、Hybrid Search、重排序 | 🔄 進行中 |
+| v0.3 | 多代理工作流、外部工具、串流 UI | 未開始 |
+| v1.0 | 部署、CI/CD、展示版本 | 未開始 |
 
-> **Design Decision**：對於 Side Project Demo 規模（低個位數同時使用者），In-memory FAISS 的回應延遲遠低於外部向量資料庫的網路往返延遲，且完全免除額外基礎設施成本。若未來演進至萬人併發，可在不修改核心 RAG 邏輯的前提下，透過替換 `SessionIndexer` 底層的 index backend 來完成架構升級。
