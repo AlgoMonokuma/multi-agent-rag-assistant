@@ -134,3 +134,16 @@ tests/integration/  API 與跨模組整合測試
 ### v1.0
 
 - 完成部署、自動化流程與展示版本
+
+## Architecture & Scalability Notes
+
+目前 MVP 使用 **FastAPI（非同步架構）** 搭配 **In-memory FAISS** 實現 Session 隔離的低延遲向量檢索。
+
+| 層面 | MVP 當前設計 | 若需大規模擴展 |
+|---|---|---|
+| 向量儲存 | FAISS (In-memory, per-session) | 抽換為 Milvus 叢集 或 Pinecone 雲端服務 |
+| Session 持久化 | 記憶體存活期間 | FAISS index 序列化落地硬碟 + TTL 機制 |
+| 併發處理 | FastAPI Async IO (單節點) | Kubernetes 水平擴展 + Load Balancer |
+| LLM 費用控制 | 使用免費開源模型 (Groq API) | 視需求導入 Semantic Cache 層 |
+
+> **Design Decision**：對於 Side Project Demo 規模（低個位數同時使用者），In-memory FAISS 的回應延遲遠低於外部向量資料庫的網路往返延遲，且完全免除額外基礎設施成本。若未來演進至萬人併發，可在不修改核心 RAG 邏輯的前提下，透過替換 `SessionIndexer` 底層的 index backend 來完成架構升級。
