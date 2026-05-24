@@ -6,9 +6,12 @@ import math
 import re
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Protocol, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Protocol, Sequence
 
 from core.log import logger
+
+if TYPE_CHECKING:
+    from core.rag.reranker import CrossEncoderReranker
 
 
 class RetrieverException(Exception):
@@ -44,9 +47,13 @@ class IndexerProtocol(Protocol):
         """列出 Session 的 vector ordinal 映射。"""
 
 
-@dataclass(slots=True)
+@dataclass
 class RetrievedChunk:
-    """單一檢索結果，包含分數與 citation metadata。"""
+    """單一檢索結果，包含分數與 citation metadata。
+
+    rerank_score 欄位為可選，僅在啟用 Re-Ranking 時由 CrossEncoderReranker 填入。
+    未啟用 Re-Ranking 時此欄位為 None，確保向下相容。
+    """
 
     chunk_id: str
     page_content: str
@@ -55,6 +62,7 @@ class RetrievedChunk:
     keyword_score: float
     merged_score: float
     rank: int
+    rerank_score: Optional[float] = None
 
 
 @dataclass(slots=True)
@@ -77,7 +85,11 @@ DEFAULT_KEYWORD_WEIGHT = 0.3
 
 
 class HybridRetriever:
-    """結合向量檢索與關鍵字檢索的 Session 範圍混合檢索器。"""
+    """結合向量檢索與關鍵字檢索的 Session 範圍混合檢索器。
+
+    可選擇性地注入 CrossEncoderReranker，在 Hybrid Search 完成後對結果進行二次精排。
+    未注入 reranker 時行為與原來完全相同（向下相容）。
+    """
 
     def __init__(
         self,
@@ -85,6 +97,8 @@ class HybridRetriever:
         embedder: Any,
         vector_weight: float = DEFAULT_VECTOR_WEIGHT,
         keyword_weight: float = DEFAULT_KEYWORD_WEIGHT,
+        reranker: Optional["CrossEncoderReranker"] = None,
+        final_top_n: int = 3,
     ) -> None:
         """初始化混合檢索器。
 
@@ -93,17 +107,23 @@ class HybridRetriever:
             embedder: 提供文字嵌入能力的嵌入器（需有 embed_texts 方法）。
             vector_weight: 向量分數在合併時的權重。
             keyword_weight: 關鍵字分數在合併時的權重。
+            reranker: 可選的 CrossEncoderReranker 實例；None 時不執行 Re-Ranking。
+            final_top_n: 啟用 Re-Ranking 時最終回傳的結果數量（預設 3）。
         """
         self._indexer = session_indexer
         self._embedder = embedder
         self._vector_weight = vector_weight
         self._keyword_weight = keyword_weight
+        self._reranker = reranker
+        self._final_top_n = final_top_n
 
     def search(
         self,
         session_id: str,
         query: str,
         top_k: int = DEFAULT_TOP_K,
+        vector_weight: float | None = None,
+        keyword_weight: float | None = None,
     ) -> HybridSearchResult:
         """執行混合檢索，回傳去重合併的 Top-K 結果。
 
@@ -111,6 +131,8 @@ class HybridRetriever:
             session_id: 目標 Session 的唯一識別碼。
             query: 使用者查詢文字。
             top_k: 回傳結果數量上限。
+            vector_weight: 覆寫向量分數權重；None 時沿用 __init__ 的預設值。
+            keyword_weight: 覆寫關鍵字分數權重；None 時沿用 __init__ 的預設值。
 
         Returns:
             HybridSearchResult 包含合併排序後的結果清單。
@@ -122,6 +144,21 @@ class HybridRetriever:
         self._validate_session(session_id)
 
         record = self._indexer.get_session(session_id)
+
+        # 每次查詢層級覆寫：優先使用呼叫端提供的值，其次使用 Session 記錄的值，否則沿用實例預設值
+        if vector_weight is not None:
+            effective_vector_weight = vector_weight
+        elif getattr(record, "vector_weight", None) is not None:
+            effective_vector_weight = record.vector_weight
+        else:
+            effective_vector_weight = self._vector_weight
+
+        if keyword_weight is not None:
+            effective_keyword_weight = keyword_weight
+        elif getattr(record, "keyword_weight", None) is not None:
+            effective_keyword_weight = record.keyword_weight
+        else:
+            effective_keyword_weight = self._keyword_weight
 
         # top_k 若 <= 0，直接回傳空結果，防免後續給 FAISS 帶來不預期參數
         if top_k <= 0:
@@ -146,26 +183,48 @@ class HybridRetriever:
         vector_hits = self._vector_search(session_id, record, query, top_k)
         keyword_hits = self._keyword_search(session_id, record, query, top_k)
 
-        # 合併與去重
+        # 合併與去重，傳入本次查詢的有效權重
         merged = self._merge_results(
             session_id=session_id,
             vector_hits=vector_hits,
             keyword_hits=keyword_hits,
             top_k=top_k,
+            vector_weight=effective_vector_weight,
+            keyword_weight=effective_keyword_weight,
         )
 
+        # 初步合併結果的總數（Re-Ranking 前）
+        initial_total = len(merged)
+
+        # 若有注入 Reranker，執行二次精排（AC: 6）
+        if self._reranker is not None:
+            from core.rag.reranker import RerankerException  # noqa: PLC0415
+            try:
+                merged = self._reranker.rerank(  # type: ignore[assignment]
+                    query=query,
+                    chunks=merged,
+                    top_n=self._final_top_n,
+                )
+            except RerankerException as error:
+                logger.error(
+                    "Session %s Re-Ranking 失敗，退回 Hybrid Search 結果: %s",
+                    session_id,
+                    error,
+                )
+
         logger.info(
-            "Session %s 混合檢索完成，查詢='%s'，回傳 %s 筆結果。",
+            "Session %s 混合檢索完成，查詢='%s'，回傳 %s 筆結果（初步 %s 筆）。",
             session_id,
             query,
             len(merged),
+            initial_total,
         )
 
         return HybridSearchResult(
             query=query,
             session_id=session_id,
             results=merged,
-            total_found=len(merged),
+            total_found=initial_total,
         )
 
     # ------------------------------------------------------------------
@@ -311,8 +370,15 @@ class HybridRetriever:
         vector_hits: Dict[str, float],
         keyword_hits: Dict[str, float],
         top_k: int,
+        vector_weight: float,
+        keyword_weight: float,
     ) -> List[RetrievedChunk]:
-        """將兩個檢索分支的結果合併、去重、排序。"""
+        """將兩個檢索分支的結果合併、去重、排序。
+
+        Args:
+            vector_weight: 本次合併使用的向量權重。
+            keyword_weight: 本次合併使用的關鍵字權重。
+        """
         all_chunk_ids = set(vector_hits.keys()) | set(keyword_hits.keys())
 
         if not all_chunk_ids:
@@ -323,7 +389,7 @@ class HybridRetriever:
             v_score = vector_hits.get(chunk_id, 0.0)
             k_score = keyword_hits.get(chunk_id, 0.0)
             m_score = (
-                self._vector_weight * v_score + self._keyword_weight * k_score
+                vector_weight * v_score + keyword_weight * k_score
             )
             merged_entries.append((chunk_id, v_score, k_score, m_score))
 
