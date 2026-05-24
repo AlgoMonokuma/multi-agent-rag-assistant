@@ -27,6 +27,8 @@ class SessionIndexRecord:
     chunk_map: Dict[str, ParsedDocument] = field(default_factory=dict)
     metadata_map: Dict[str, Dict[str, Any]] = field(default_factory=dict)
     vector_chunk_ids: List[str] = field(default_factory=list)
+    vector_weight: float | None = None
+    keyword_weight: float | None = None
 
 
 class SessionIndexer:
@@ -62,6 +64,27 @@ class SessionIndexer:
     def get_session(self, session_id: str) -> SessionIndexRecord:
         """取得指定 Session 記錄。"""
         return self._require_session(session_id)
+
+    def update_session_weights(self, session_id: str, vector_weight: float, keyword_weight: float) -> None:
+        """更新 Session 的檢索權重。
+
+        Args:
+            session_id: 目標 Session ID。
+            vector_weight: 向量檢索權重 (0.0~1.0)。
+            keyword_weight: 關鍵字檢索權重 (0.0~1.0)。
+
+        Raises:
+            IndexerException: 當權重不在合法範圍內時。
+        """
+        if not (0.0 <= vector_weight <= 1.0) or not (0.0 <= keyword_weight <= 1.0):
+             raise IndexerException(
+                 f"無效的權重範圍: vector={vector_weight}, keyword={keyword_weight}。"
+                 " 權重必須在 0.0 到 1.0 之間。"
+             )
+
+        record = self._require_session(session_id)
+        record.vector_weight = vector_weight
+        record.keyword_weight = keyword_weight
 
     def store_documents(
         self,
