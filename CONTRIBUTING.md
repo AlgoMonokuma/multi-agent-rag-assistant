@@ -42,6 +42,7 @@ uv run pytest tests/unit/core/rag
 
 ## Code Style
 
+- Follow the project-wide [Engineering Standards](docs/engineering-standards.md).
 - Use `snake_case` for functions and variables.
 - Use `PascalCase` for classes.
 - Keep core logic inside `core/`.

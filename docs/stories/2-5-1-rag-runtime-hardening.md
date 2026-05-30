@@ -6,6 +6,10 @@ Status: Planned
 
 As a developer, I want lightweight runtime guardrails around ingestion, retrieval, and re-ranking so that the RAG pipeline remains observable, recoverable, and consistent under normal and failure scenarios.
 
+## Scope
+
+This story hardens existing RAG runtime behavior around state consistency, citation metadata, boundary handling, model reuse, and failure observability.
+
 ## Acceptance Criteria
 
 1. Given ingestion updates document-type retrieval weights, when chunking, embedding, or indexing fails, then the system must not leave partially updated session state.
@@ -15,15 +19,21 @@ As a developer, I want lightweight runtime guardrails around ingestion, retrieva
 5. Given lazy-loaded models, when repeated queries run in one process, then model instances should be reused rather than re-initialized per query.
 6. Given failure paths, when runtime errors occur, then domain exceptions and logs must make the failure observable.
 
-## Planned Test Coverage
+## Implementation Notes
 
-- Partial update protection during ingestion failure.
-- Required citation metadata validation.
-- Top-K and Top-N boundary behavior.
-- Re-ranker model reuse.
-- Failure-path logging and exception behavior.
+- Partial update protection should live near ingestion orchestration in `core/rag/pipeline.py`.
+- Citation metadata checks should stay close to retrieval result assembly in `core/rag/retriever.py`.
+- Re-ranker model reuse should be handled without making tests load real model weights.
+- Tests should cover partial update protection, required citation metadata, Top-K and Top-N boundaries, re-ranker model reuse, and failure-path logging.
 
-## Public Evidence Target
+## Out of Scope
+
+- New retrieval algorithms
+- UI changes
+- Production monitoring backend
+- Persistent model serving infrastructure
+
+## Definition of Done
 
 - `core/rag/pipeline.py`
 - `core/rag/retriever.py`

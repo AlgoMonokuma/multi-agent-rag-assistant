@@ -21,6 +21,8 @@ htmlcov/
 Thumbs.db
 
 .agent/
+.agents/
 _bmad/
 _bmad-output/
 _private_migration_*/
+PRIVATE-MIGRATION-README.md

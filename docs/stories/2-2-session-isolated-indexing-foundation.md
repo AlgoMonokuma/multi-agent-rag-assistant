@@ -6,6 +6,10 @@ Status: Complete
 
 As a developer, I want each user session to own an isolated FAISS index and metadata registry so that one session cannot read or mutate another session's retrieval state.
 
+## Scope
+
+This story establishes per-session vector index ownership, metadata storage, and cleanup behavior.
+
 ## Acceptance Criteria
 
 1. Given a new session request, when a session is created, then the system creates a unique session id and an independent FAISS index.
@@ -21,7 +25,14 @@ As a developer, I want each user session to own an isolated FAISS index and meta
 - `SessionIndexer` creates sessions, stores chunk metadata, ingests embeddings, and cleans up sessions.
 - Tests live in `tests/unit/core/rag/test_indexer.py`.
 
-## Public Evidence
+## Out of Scope
+
+- Document parsing
+- Text chunking
+- Embedding model implementation
+- Retrieval ranking
+
+## Definition of Done
 
 - `core/rag/indexer.py`
 - `tests/unit/core/rag/test_indexer.py`

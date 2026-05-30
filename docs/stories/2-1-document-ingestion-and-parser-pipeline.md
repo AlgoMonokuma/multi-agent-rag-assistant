@@ -6,6 +6,10 @@ Status: Complete
 
 As a user, I want to upload PDF or Markdown files so that the system can extract clean text while preserving source metadata such as page numbers and titles.
 
+## Scope
+
+This story introduces the document parser layer for supported source files and the normalized parsed-document model used by downstream RAG components.
+
 ## Acceptance Criteria
 
 1. Given a PDF file, when it is parsed, then the system extracts page text and records `source` and `page` metadata.
@@ -21,7 +25,14 @@ As a user, I want to upload PDF or Markdown files so that the system can extract
 - Parser errors are surfaced through `ParserException`.
 - Tests live in `tests/unit/core/rag/test_parser.py`.
 
-## Public Evidence
+## Out of Scope
+
+- Text chunking
+- Embedding generation
+- Vector indexing
+- Answer generation
+
+## Definition of Done
 
 - `core/rag/parser.py`
 - `tests/unit/core/rag/test_parser.py`

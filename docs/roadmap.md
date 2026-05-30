@@ -20,6 +20,7 @@ Stories should be pushed as regular commits. GitHub Releases should be reserved 
 | `v0.1.0` | Project foundation | Setup, config, logging, initial API/UI bootstrap are stable. |
 | `v0.2.0` | RAG runtime foundation | Parser, indexing, chunking, hybrid retrieval, profiles, and re-ranking are documented and tested. |
 | `v0.2.1` | RAG runtime hardening | Story 2.5.1 guardrails are complete and tests pass. |
+| `v0.2.2` | Codebase language normalization | Developer-facing comments, docstrings, logs, exceptions, and tests use consistent English. |
 | `v0.3.0` | Agent workflow prototype | LangGraph state graph and first agent workflow are usable. |
 | `v0.4.0` | Streaming user experience | FastAPI SSE and Streamlit trace UI are usable. |
 | `v0.5.0` | Deployable demo | Docker, CI, and hosting path are ready. |
@@ -77,3 +78,4 @@ gh release create v0.2.0 --title "v0.2.0 - RAG Runtime Foundation" --notes-file 
 | 2.4.5 | Document-type chunking profile | Complete |
 | 2.5 | Re-ranking mechanism | Complete |
 | 2.5.1 | Runtime hardening and harness guardrails | Planned |
+| 2.5.2 | Codebase language normalization | Planned |

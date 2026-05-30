@@ -15,10 +15,13 @@ The project uses semantic versioning while it is pre-1.0:
 - Public documentation set under `docs/`.
 - Clean README and contributing guide for GitHub review.
 - Public roadmap and release strategy.
+- Public Story 1 specifications.
+- Engineering standards for code, tests, documentation, and releases.
 
 ### Planned
 
 - Story 2.5.1: RAG runtime hardening and harness guardrails.
+- Story 2.5.2: Codebase language normalization.
 - Runtime metadata validation and Top-K / Top-N boundary rules.
 - GitHub release tagging after the next stable milestone.
 

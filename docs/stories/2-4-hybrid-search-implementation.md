@@ -6,6 +6,10 @@ Status: Complete
 
 As a user, I want the system to combine semantic vector search and keyword matching so that retrieval works for both broad conceptual queries and precise terms.
 
+## Scope
+
+This story introduces hybrid retrieval over indexed session chunks, including vector scoring, keyword scoring, score merging, and citation metadata preservation.
+
 ## Acceptance Criteria
 
 1. Given an indexed session and a query, when search runs, then the system performs vector retrieval against the session FAISS index.
@@ -21,7 +25,14 @@ As a user, I want the system to combine semantic vector search and keyword match
 - The retriever preserves metadata needed for future citation display.
 - Tests live in `tests/unit/core/rag/test_retriever.py`.
 
-## Public Evidence
+## Out of Scope
+
+- Cross-encoder re-ranking
+- Answer generation
+- UI result display
+- Persistent index storage
+
+## Definition of Done
 
 - `core/rag/retriever.py`
 - `tests/unit/core/rag/test_retriever.py`

@@ -6,6 +6,10 @@ Status: Complete
 
 As a user, I want retrieved chunks to be re-ranked before final answer generation so that the most relevant passages are prioritized.
 
+## Scope
+
+This story adds optional cross-encoder re-ranking for hybrid search candidates while preserving baseline retrieval behavior when no re-ranker is configured.
+
 ## Acceptance Criteria
 
 1. Given top candidate chunks from hybrid search, when re-ranking runs, then a cross-encoder scores query-passage pairs.
@@ -23,7 +27,14 @@ As a user, I want retrieved chunks to be re-ranked before final answer generatio
 - `RetrievedChunk` includes optional `rerank_score`.
 - Tests live in `tests/unit/core/rag/test_reranker.py`.
 
-## Public Evidence
+## Out of Scope
+
+- Answer generation
+- Citation rendering
+- Model fine-tuning
+- Persistent model cache management
+
+## Definition of Done
 
 - `core/rag/reranker.py`
 - `core/rag/retriever.py`

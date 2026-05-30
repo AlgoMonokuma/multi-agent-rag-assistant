@@ -93,6 +93,7 @@ uv run streamlit run app/main.py
 
 - [Product Requirements](docs/product-requirements.md)
 - [Architecture](docs/architecture.md)
+- [Engineering Standards](docs/engineering-standards.md)
 - [Roadmap and Release Strategy](docs/roadmap.md)
 - [Story Specifications](docs/stories)
 - [Changelog](CHANGELOG.md)

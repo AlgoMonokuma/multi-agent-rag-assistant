@@ -6,6 +6,10 @@ Status: Complete
 
 As a developer, I want parsed documents to be chunked, embedded, and stored in the active session index so that document content becomes searchable through vector retrieval.
 
+## Scope
+
+This story connects parsed documents to chunking, embedding generation, and session index ingestion.
+
 ## Acceptance Criteria
 
 1. Given parsed documents, when the ingestion pipeline runs, then text is split into chunks while preserving source metadata.
@@ -22,7 +26,14 @@ As a developer, I want parsed documents to be chunked, embedded, and stored in t
 - Session storage and FAISS ordinal mapping live in `core/rag/indexer.py`.
 - Tests live in `tests/unit/core/rag/test_chunker.py` and `tests/unit/core/rag/test_indexer.py`.
 
-## Public Evidence
+## Out of Scope
+
+- Hybrid keyword retrieval
+- Re-ranking
+- Answer generation
+- UI upload workflow
+
+## Definition of Done
 
 - `core/rag/chunker.py`
 - `core/rag/embeddings.py`
