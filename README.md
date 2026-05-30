@@ -1,95 +1,104 @@
 # AI Knowledge Work Assistant
 
-一個針對知識工作場景設計的文件問答系統。使用者上傳文件後，系統透過混合檢索（向量 + 關鍵字）找出相關段落，再交由 LLM 生成具來源引用的結構化回答。
+AI Knowledge Work Assistant is a document question-answering system focused on retrieval quality, session isolation, and traceable answers. Users upload PDF or Markdown files, the system parses and indexes the content, and the RAG pipeline retrieves relevant passages through hybrid search and cross-encoder re-ranking.
 
-## Core Capabilities
+The project is currently focused on the RAG runtime foundation. Agent orchestration, streaming UI, and deployment automation are planned next.
 
-- PDF 與 Markdown 文件解析
-- 以 FAISS 為底層的 Session 隔離向量索引
-- Hybrid Search：向量搜尋（sentence-transformers）+ BM25 關鍵字搜尋
-- 多代理工作流（LangGraph）：研究、整理、產出、審核
-- 即時串流回應（SSE）與引用來源追蹤
+## Current Capabilities
+
+- PDF and Markdown parsing with source metadata.
+- Session-isolated in-memory FAISS indexes.
+- Text chunking and sentence-transformer embeddings.
+- Hybrid retrieval using vector search and keyword scoring.
+- Document-type chunking profiles for semantic, precise, and code-heavy content.
+- Cross-encoder re-ranking for improving final retrieval order.
+- Unit tests for parser, chunker, embeddings, indexing, retrieval, and re-ranking behavior.
 
 ## Tech Stack
 
-| 類別 | 技術 |
-|---|---|
-| Backend | FastAPI + Async IO |
-| Frontend | Streamlit |
-| Workflow | LangGraph |
-| LLM | Groq API |
-| Vector Store | FAISS (In-memory, per-session) |
+| Area | Technology |
+| --- | --- |
+| Language | Python 3.11+ |
+| API | FastAPI |
+| UI | Streamlit |
+| RAG index | FAISS, in-memory per session |
 | Embeddings | sentence-transformers |
+| Re-ranking | cross-encoder/ms-marco-MiniLM-L-6-v2 |
 | Testing | pytest |
-| Dependency | uv |
-| Deployment | Docker, GitHub Actions, Hugging Face Spaces |
+| Dependency management | uv |
+| Planned orchestration | LangGraph |
+| Planned deployment | Docker, GitHub Actions, Hugging Face Spaces |
 
 ## Project Structure
 
 ```text
-core/rag/
-  parser.py       ✅ PDF / Markdown 解析
-  chunker.py      ✅ RecursiveCharacterTextSplitter 分塊
-  embeddings.py   ✅ sentence-transformers 向量化
-  indexer.py      ✅ Session 隔離 FAISS 索引管理
-  retriever.py    ✅ Hybrid Search (向量 + BM25)
-  pipeline.py     ✅ 文件攝入管線
-
-app/              前端 Streamlit（開發中）
-api/              FastAPI 路由（開發中）
-tests/            49 個單元與整合測試全數通過
+api/
+  main.py                 FastAPI app and health endpoint
+app/
+  main.py                 Streamlit app bootstrap
+core/
+  config.py               Environment-driven settings
+  log.py                  Shared logger
+  rag/
+    parser.py             PDF and Markdown parsing
+    chunker.py            Text chunking and chunking profiles
+    embeddings.py         Sentence-transformer embeddings
+    indexer.py            Session-scoped FAISS index registry
+    pipeline.py           Ingestion pipeline
+    retriever.py          Hybrid vector and keyword retrieval
+    reranker.py           Cross-encoder re-ranking
+tests/
+  unit/                   Core unit tests
+  integration/            API integration tests
+docs/
+  product-requirements.md Public product requirements
+  architecture.md         Public architecture overview
+  roadmap.md              Public roadmap and release strategy
+  stories/                Public story specifications
 ```
 
 ## Quick Start
 
-```bash
-# 安裝依賴
-uv sync --group dev
+Install dependencies:
 
-# 複製環境設定
-copy .env.example .env
+```powershell
+uv sync --group dev
 ```
 
-```bash
-# 啟動後端
-uv run python -m api.main
-# http://127.0.0.1:8000/health
+Create a local environment file:
 
-# 啟動前端
-uv run streamlit run app/main.py
-# http://localhost:8501
+```powershell
+Copy-Item .env.example .env
+```
 
-# 執行測試
+Run tests:
+
+```powershell
 uv run pytest
 ```
 
-## Architecture Notes
+Run the API:
 
-系統採用 **In-memory FAISS per-session** 的設計：每個使用者對話建立獨立的 FAISS 索引，避免不同使用者的文件語意互相污染，並在對話生命週期結束後自動釋放記憶體。
+```powershell
+uv run python -m api.main
+```
 
-若需支援更大規模的部署：
+Run the Streamlit app:
 
-| 層面 | 當前設計 | 可能的演進方向 |
-|---|---|---|
-| 向量儲存 | FAISS In-memory | Milvus 叢集 / Pinecone |
-| Session 持久化 | 記憶體存活期間 | FAISS index 序列化 + TTL |
-| 水平擴展 | 單節點 Async IO | Kubernetes + Load Balancer |
+```powershell
+uv run streamlit run app/main.py
+```
 
-## Development Principles
+## Documentation
 
-- 程式碼註解與 docstrings 以繁體中文撰寫
-- 敏感資訊以環境變數管理，不提交至版本庫
-- 每次功能變更須附帶對應單元測試
-- 模組邊界清楚，RAG 邏輯不散落至 API 或 UI 層
+- [Product Requirements](docs/product-requirements.md)
+- [Architecture](docs/architecture.md)
+- [Roadmap and Release Strategy](docs/roadmap.md)
+- [Story Specifications](docs/stories)
+- [Changelog](CHANGELOG.md)
 
-詳見 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+## Development Status
 
-## Roadmap
+The repository has completed the main Epic 2 RAG runtime stories through re-ranking. The next recommended milestone is runtime hardening: metadata validation, stricter Top-K and Top-N rules, partial-update protection, and model lifecycle guardrails.
 
-| 版本 | 目標 | 狀態 |
-|---|---|---|
-| v0.1 | 專案骨架、測試框架、設定與日誌 | ✅ 完成 |
-| v0.2 | 文件解析、分塊、索引、Hybrid Search、重排序 | 🔄 進行中 |
-| v0.3 | 多代理工作流、外部工具、串流 UI | 未開始 |
-| v1.0 | 部署、CI/CD、展示版本 | 未開始 |
-
+See [docs/roadmap.md](docs/roadmap.md) for the versioning plan.

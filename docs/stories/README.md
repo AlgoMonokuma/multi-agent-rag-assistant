@@ -1,0 +1,13 @@
+# Story Specifications
+
+These are public story specifications derived from the implementation history. They intentionally exclude private workflow notes, local tool records, generated diffs, and model/tool execution logs.
+
+| Story | Title | Status |
+| --- | --- | --- |
+| [2.1](2-1-document-ingestion-and-parser-pipeline.md) | Document ingestion and parser pipeline | Complete |
+| [2.2](2-2-session-isolated-indexing-foundation.md) | Session-isolated indexing foundation | Complete |
+| [2.3](2-3-text-chunking-and-embedding-pipeline.md) | Text chunking and embedding pipeline | Complete |
+| [2.4](2-4-hybrid-search-implementation.md) | Hybrid search implementation | Complete |
+| [2.4.5](2-4-5-document-type-chunking-profile.md) | Document-type chunking profile | Complete |
+| [2.5](2-5-re-ranking-mechanism.md) | Re-ranking mechanism | Complete |
+| [2.5.1](2-5-1-rag-runtime-hardening.md) | RAG runtime hardening and harness guardrails | Planned |

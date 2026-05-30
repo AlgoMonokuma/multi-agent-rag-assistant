@@ -1,125 +1,61 @@
-# 貢獻指南 (Contributing Guide)
+# Contributing Guide
 
-感謝您參與 **AI Knowledge Work Assistant** 的開發！為了確保程式碼品質與團隊協作順暢，請所有貢獻者嚴格遵守以下開發與文件規範。
+This project uses a small, test-first workflow. The goal is to keep each change easy to review, easy to run locally, and clearly connected to a user-facing or engineering outcome.
 
-## 目錄
-1. [開發環境設定](#開發環境設定)
-2. [語言與註解規範 (CRITICAL)](#語言與註解規範-critical)
-3. [日誌記錄規範](#日誌記錄規範)
-4. [測試與程式碼審查](#測試與程式碼審查)
-5. [提交範圍與收尾原則](#提交範圍與收尾原則)
-6. [故事完成定義](#故事完成定義)
+## Local Setup
 
----
+Install dependencies:
 
-## 開發環境設定
-
-本專案使用 `uv` 進行依賴管理，並且強制要求設定安全環境變數。
-
-1. **安裝依賴**: 
-   請在專案根目錄下執行：
-   ```bash
-   uv sync
-   ```
-2. **環境變數設定**: 
-   請複製 `.env.example` 為 `.env`，並補上您的 API Keys (如 `GROQ_API_KEY`)。
-   > ⚠️ 絕對不要將含有真實金鑰的 `.env` 檔案 commit 到版本控制系統中。
-
----
-
-## 語言與註解規範 (CRITICAL)
-
-為了符合專案在地化需求，本專案的註解語言受到**嚴格限制**：
-
-- **繁體中文唯一原則**: 所有的 code comments、Docstrings (模組、類別、函式的說明) **必須完全使用繁體中文** 撰寫！
-- 禁止使用英文或簡體中文做為主要的文件語言。
-- 變數名稱與函數名稱請保持 `snake_case` 或 `PascalCase` 英文命名。
-
-### 範例：
-```python
-def process_data(data_id: str) -> bool:
-    """
-    處理傳入的資料 ID 並回傳是否成功。
-
-    Args:
-        data_id: 要處理的資料唯一識別碼。
-
-    Returns:
-        處理成功回傳 True，否則為 False。
-    """
-    # 執行資料清理
-    clean_id = data_id.strip()
-    return True
+```powershell
+uv sync --group dev
 ```
 
----
+Create a local `.env` from the example file:
 
-## 日誌記錄規範
-
-為了保持除錯時的資訊清晰，並與雲端部署順利整合，請遵守以下日誌規範：
-
-1. **一律使用 `core.log.logger`**: 請勿使用內建的 `print()`。
-2. **嚴謹的記錄等級 (Log Level)**:
-   - `INFO`: 重要業務流程啟動、成功完成。
-   - `ERROR`: 系統發生異常，需要被監控並捕捉到的例外情形。
-   - `DEBUG`: (可選) 僅用於本機除錯，請勿在生產環境留下太多 debug logs。
-
-### 使用方法：
-```python
-from core.log import logger
-
-logger.info("系統初始化成功。")
-try:
-    ...
-except Exception as e:
-    logger.error(f"發生未預期的錯誤: {e}")
+```powershell
+Copy-Item .env.example .env
 ```
 
----
+Never commit `.env`, credentials, private migration notes, local workflow artifacts, or generated temporary files.
 
-## 測試與程式碼審查
+## Development Workflow
 
-- 本專案採用 **測試驅動開發 (TDD)**。在提交新功能前，請確保對應的單元測試位在 `/tests/unit` 目錄下。
-- 使用 pytest 進行測試：
-  ```bash
-  pytest
-  ```
-- 提交 PR 前，請務必跑過一次所有測試，並確保沒有破壞現有功能。
+1. Keep each change focused on one story, bug fix, or documentation improvement.
+2. Add or update tests for behavior changes.
+3. Run the smallest relevant test suite before committing.
+4. Use clear conventional commit messages, such as `feat(rag): add hybrid retriever`.
+5. Keep public documentation aligned when behavior, setup, or project scope changes.
 
----
+## Testing
 
-## 提交範圍與收尾原則
+Run the full test suite:
 
-- 提交前請先將工作樹變更分成三類：
-  - **本故事主體**：本次功能實作、必要修補、對應測試。
-  - **同區域收尾**：與本次功能高度相關、但不一定屬於核心 acceptance criteria 的整理或穩定化變更。
-  - **私有或流程檔**：BMAD workflow、內部筆記、私有遷移文件、金鑰與本機設定。
-- **私有或流程檔不得提交到 GitHub**，包含 `_bmad/`、`_bmad-output/`、`.agents/`、`PRIVATE-MIGRATION-README.md`、`.env`、`.streamlit/secrets.toml`。
-- **本故事主體** 應優先以乾淨 commit 提交。
-- 若存在 **同區域收尾** 變更，建議在同一輪工作中以第二個小 commit 一併收掉，而不是長期留在工作樹。
-- 不要把上一個故事的未整理變更默默帶進下一個故事；若發現殘留，應先分類、驗證，再決定獨立提交或明確保留。
+```powershell
+uv run pytest
+```
 
----
+Run only RAG unit tests:
 
-## 故事完成定義
+```powershell
+uv run pytest tests/unit/core/rag
+```
 
-當一個故事準備標記完成時，至少應符合以下條件：
+## Code Style
 
-- 功能已完成，且符合故事範圍。
-- Code review 已完成，發現的明確問題已修正。
-- 相關測試已通過。
-- GitHub 已同步本次應提交的變更。
-- 工作樹只剩明確排除的私有檔或流程檔，不應殘留不明修改。
-- 若有本機流程文件需要同步更新，應明確說明其是否受 `.gitignore` 保護，以及是否只保留在本機。
+- Use `snake_case` for functions and variables.
+- Use `PascalCase` for classes.
+- Keep core logic inside `core/`.
+- Keep API concerns inside `api/`.
+- Keep UI concerns inside `app/`.
+- Prefer explicit exceptions over silent failure.
+- Use the shared logger instead of `print()`.
 
----
+## Public Documentation
 
-## README 維護原則
+The public documentation lives in `docs/`, `README.md`, and `CHANGELOG.md`.
 
-README 不需要每次提交都更新，只在以下兩種情況才需要同步修改：
+Internal planning files, private workflow artifacts, local tool configuration, generated diffs, and temporary review notes should stay out of GitHub. The repository `.gitignore` is configured to exclude those files by default.
 
-1. **新增核心模組**：`core/rag/` 下有新檔案完成實作時，更新 `Project Structure` 區塊的模組清單與狀態標記（✅ / 🔄）。
-2. **里程碑狀態變更**：某個 Roadmap 版本（v0.1、v0.2 等）所有功能點完成時，更新 `Roadmap` 表格中對應列的狀態欄。
+## Release Notes
 
-其他如 bugfix、重構、測試補強，若不影響功能清單或版本進度，不需要動 README。
-
+Update `CHANGELOG.md` when a set of related stories reaches a meaningful milestone. Use GitHub Releases for milestones that an interviewer or external reviewer can understand and try, not for every individual story.
