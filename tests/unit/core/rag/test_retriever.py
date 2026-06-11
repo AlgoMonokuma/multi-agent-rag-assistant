@@ -69,6 +69,15 @@ class FakeEmbedder:
         return np.ones((len(texts), 384), dtype=np.float32) * 0.5
 
 
+class CountingEmbedder(FakeEmbedder):
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def embed_texts(self, texts: list[str]) -> np.ndarray:
+        self.calls += 1
+        return super().embed_texts(texts)
+
+
 @pytest.fixture
 def fake_index_factory() -> Any:
     """建立 FakeFaissIndex 工廠。"""
@@ -423,6 +432,86 @@ class TestHybridMerge:
             assert "session_id" in chunk.metadata
             assert chunk.metadata["session_id"] == sid
 
+    def test_search_results_include_required_citation_metadata(
+        self, fake_index_factory: Any
+    ) -> None:
+        indexer = SessionIndexer(index_factory=fake_index_factory)
+        record = indexer.create_session()
+        indexer.ingest_chunk_embeddings(
+            record.session_id,
+            documents=[ParsedDocument(page_content="citation content", metadata={})],
+            embeddings=[[0.1] * 384],
+        )
+        retriever = HybridRetriever(session_indexer=indexer, embedder=FakeEmbedder())
+
+        result = retriever.search(
+            session_id=record.session_id, query="citation", top_k=1
+        )
+
+        metadata = result.results[0].metadata
+        assert metadata["source"] == "unknown"
+        assert metadata["chunk_id"] == "chunk-1"
+        assert metadata["session_id"] == record.session_id
+
+    def test_search_results_normalize_empty_citation_source(
+        self, fake_index_factory: Any
+    ) -> None:
+        indexer = SessionIndexer(index_factory=fake_index_factory)
+        record = indexer.create_session()
+        indexer.ingest_chunk_embeddings(
+            record.session_id,
+            documents=[
+                ParsedDocument(page_content="none source", metadata={"source": None}),
+                ParsedDocument(page_content="blank source", metadata={"source": ""}),
+            ],
+            embeddings=[[0.1] * 384, [0.2] * 384],
+        )
+        retriever = HybridRetriever(session_indexer=indexer, embedder=FakeEmbedder())
+
+        result = retriever.search(session_id=record.session_id, query="source", top_k=2)
+
+        assert {chunk.metadata["source"] for chunk in result.results} == {"unknown"}
+
+    def test_reranked_results_preserve_optional_citation_metadata(
+        self, fake_index_factory: Any
+    ) -> None:
+        class PassthroughReranker:
+            def rerank(self, query, chunks, top_n):
+                return chunks[:top_n]
+
+        indexer = SessionIndexer(index_factory=fake_index_factory)
+        record = indexer.create_session()
+        indexer.ingest_chunk_embeddings(
+            record.session_id,
+            documents=[
+                ParsedDocument(
+                    page_content="optional citation content",
+                    metadata={
+                        "source": "doc.pdf",
+                        "page": 7,
+                        "title": "Title",
+                        "parent_source": "parent.pdf",
+                        "chunk_index": 3,
+                    },
+                )
+            ],
+            embeddings=[[0.1] * 384],
+        )
+        retriever = HybridRetriever(
+            session_indexer=indexer,
+            embedder=FakeEmbedder(),
+            reranker=PassthroughReranker(),  # type: ignore[arg-type]
+            final_top_n=1,
+        )
+
+        result = retriever.search(
+            session_id=record.session_id, query="optional", top_k=1
+        )
+
+        metadata = result.results[0].metadata
+        for key in ("page", "title", "parent_source", "chunk_index"):
+            assert key in metadata
+
 
 # ---------------------------------------------------------------------------
 # Task 5: 範圍邊界測試（不實作 reranking）
@@ -497,6 +586,32 @@ class TestErrorHandling:
 
         assert result.results == []
         assert result.total_found == 0
+
+    def test_search_top_k_zero_returns_empty_without_embedding(
+        self, seeded_indexer: tuple[SessionIndexer, str]
+    ) -> None:
+        indexer, sid = seeded_indexer
+        embedder = CountingEmbedder()
+        retriever = HybridRetriever(session_indexer=indexer, embedder=embedder)
+
+        result = retriever.search(session_id=sid, query="anything", top_k=0)
+
+        assert result.results == []
+        assert result.total_found == 0
+        assert embedder.calls == 0
+
+    def test_search_top_k_negative_returns_empty_without_embedding(
+        self, seeded_indexer: tuple[SessionIndexer, str]
+    ) -> None:
+        indexer, sid = seeded_indexer
+        embedder = CountingEmbedder()
+        retriever = HybridRetriever(session_indexer=indexer, embedder=embedder)
+
+        result = retriever.search(session_id=sid, query="anything", top_k=-1)
+
+        assert result.results == []
+        assert result.total_found == 0
+        assert embedder.calls == 0
 
     def test_top_k_larger_than_corpus_returns_all_available(
         self, seeded_indexer: tuple[SessionIndexer, str]

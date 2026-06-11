@@ -99,6 +99,11 @@ class CrossEncoderReranker:
             return []
 
         # 取得已載入（或注入）的 cross_encoder，載入後存入 instance 變數進行 Cache (Bug B Fix)
+        # top_n <= 0 is an explicit empty result and must not invoke the model.
+        if top_n <= 0:
+            logger.info("Re-Ranking skipped because top_n <= 0: %d", top_n)
+            return []
+
         if self._cross_encoder is None:
             self._cross_encoder = self._load_model()
         cross_encoder = self._cross_encoder
@@ -110,8 +115,20 @@ class CrossEncoderReranker:
         try:
             raw_scores = cross_encoder.predict(pairs)
         except Exception as error:
-            logger.error("Cross-Encoder 推論失敗: %s", error)
-            raise RerankerException("Cross-Encoder 推論失敗。") from error
+            logger.error(
+                "Cross-Encoder prediction failed for model %s "
+                "(top_n=%s, chunk_count=%s, query_length=%s): %s",
+                self._model_name,
+                top_n,
+                len(chunks),
+                len(query),
+                error,
+            )
+            raise RerankerException(
+                "Cross-Encoder prediction failed for model "
+                f"{self._model_name} (top_n={top_n}, "
+                f"chunk_count={len(chunks)}, query_length={len(query)})."
+            ) from error
 
         # 將分數與 chunk 配對，依分數降序排列
         scored = sorted(

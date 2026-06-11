@@ -18,10 +18,12 @@ import pytest
 
 from core.rag.chunker import (
     CHUNKING_PROFILES,
+    ChunkingException,
     ChunkingProfile,
     DocumentType,
     TextChunker,
 )
+from core.rag.embeddings import EmbeddingException
 from core.rag.indexer import SessionIndexer
 from core.rag.parser import ParsedDocument
 from core.rag.pipeline import ingest_documents
@@ -68,6 +70,16 @@ class FakeEmbedder:
         return np.zeros((len(texts), 384), dtype=np.float32)
 
 
+class FailingChunker:
+    def chunk_documents(self, documents, session_id: str):
+        raise RuntimeError("chunk boom")
+
+
+class FailingEmbedder:
+    def embed_documents(self, documents):
+        raise RuntimeError("embed boom")
+
+
 class FakeFaissIndex:
     """模擬 FAISS 索引（與 test_retriever.py 相同結構）。"""
 
@@ -104,6 +116,11 @@ class FakeFaissIndex:
                 [indices, np.full((1, pad), -1, dtype=np.int64)], axis=1
             )
         return distances, indices
+
+
+class FailingAddIndex(FakeFaissIndex):
+    def add(self, vectors: np.ndarray) -> None:
+        raise RuntimeError("index boom")
 
 
 @pytest.fixture
@@ -539,3 +556,76 @@ class TestSessionWeightPersistence:
         expected = chunk.keyword_score * 0.01 + chunk.vector_score * 0.99
         assert abs(chunk.merged_score - expected) < 1e-6
 
+    def test_ingest_does_not_persist_weights_on_chunking_failure(
+        self, fake_index_factory, caplog
+    ) -> None:
+        indexer = SessionIndexer(index_factory=fake_index_factory)
+        record = indexer.create_session()
+        docs = [ParsedDocument(page_content="content", metadata={"source": "a.md"})]
+        caplog.set_level("ERROR")
+
+        with pytest.raises(ChunkingException) as exc_info:
+            ingest_documents(
+                session_indexer=indexer,
+                session_id=record.session_id,
+                documents=docs,
+                document_type=DocumentType.CODE,
+                chunker=FailingChunker(),  # type: ignore[arg-type]
+                embedder=FakeEmbedder(),  # type: ignore[arg-type]
+            )
+
+        assert record.session_id in str(exc_info.value)
+        assert "chunking failed" in str(exc_info.value)
+        assert record.session_id in caplog.text
+        assert "chunking failed during ingestion" in caplog.text
+        session_record = indexer.get_session(record.session_id)
+        assert session_record.vector_weight is None
+        assert session_record.keyword_weight is None
+
+    def test_ingest_does_not_persist_weights_on_embedding_failure(
+        self, fake_index_factory, caplog
+    ) -> None:
+        indexer = SessionIndexer(index_factory=fake_index_factory)
+        record = indexer.create_session()
+        docs = [ParsedDocument(page_content="content", metadata={"source": "a.md"})]
+        caplog.set_level("ERROR")
+
+        with pytest.raises(EmbeddingException) as exc_info:
+            ingest_documents(
+                session_indexer=indexer,
+                session_id=record.session_id,
+                documents=docs,
+                document_type=DocumentType.CODE,
+                chunker=TextChunker(splitter=FakeSplitter(["chunk"])),
+                embedder=FailingEmbedder(),  # type: ignore[arg-type]
+            )
+
+        assert record.session_id in str(exc_info.value)
+        assert "embedding failed" in str(exc_info.value)
+        assert record.session_id in caplog.text
+        assert "embedding failed during ingestion" in caplog.text
+        session_record = indexer.get_session(record.session_id)
+        assert session_record.vector_weight is None
+        assert session_record.keyword_weight is None
+
+    def test_ingest_does_not_persist_weights_on_indexing_failure(self) -> None:
+        indexer = SessionIndexer(index_factory=FailingAddIndex)
+        record = indexer.create_session()
+        docs = [ParsedDocument(page_content="content", metadata={"source": "a.md"})]
+
+        from core.rag.indexer import IndexerException
+
+        with pytest.raises(IndexerException) as exc_info:
+            ingest_documents(
+                session_indexer=indexer,
+                session_id=record.session_id,
+                documents=docs,
+                document_type=DocumentType.CODE,
+                chunker=TextChunker(splitter=FakeSplitter(["chunk"])),
+                embedder=FakeEmbedder(),  # type: ignore[arg-type]
+            )
+
+        assert record.session_id in str(exc_info.value)
+        session_record = indexer.get_session(record.session_id)
+        assert session_record.vector_weight is None
+        assert session_record.keyword_weight is None

@@ -20,12 +20,13 @@ def _make_chunk(
     page_content: str,
     rank: int = 1,
     merged_score: float = 0.5,
+    metadata: dict | None = None,
 ) -> RetrievedChunk:
     """建立測試用的 RetrievedChunk。"""
     return RetrievedChunk(
         chunk_id=chunk_id,
         page_content=page_content,
-        metadata={"source": "test.pdf"},
+        metadata=metadata or {"source": "test.pdf"},
         vector_score=0.5,
         keyword_score=0.5,
         merged_score=merged_score,
@@ -102,6 +103,17 @@ class TestCrossEncoderRerankerEmptyInput:
         assert result == []
         mock_ce.predict.assert_not_called()
 
+    def test_reranker_top_n_negative_returns_empty_without_model(self):
+        """top_n < 0 follows the same explicit empty-result rule."""
+        chunks = [_make_chunk("chunk-1", "content", rank=1)]
+        mock_ce = _make_mock_cross_encoder([0.8])
+        reranker = CrossEncoderReranker(cross_encoder=mock_ce)
+
+        result = reranker.rerank(query="query", chunks=chunks, top_n=-1)
+
+        assert result == []
+        mock_ce.predict.assert_not_called()
+
     def test_rerank_empty_chunks_does_not_call_model(self):
         """確認 chunks 為空時模型不被呼叫。"""
         mock_ce = _make_mock_cross_encoder([])
@@ -160,6 +172,35 @@ class TestCrossEncoderRerankerSorting:
         result = reranker.rerank(query="查詢", chunks=chunks, top_n=10)
 
         assert len(result) == 2
+
+    def test_reranker_top_n_boundary_is_explicit(self):
+        """top_n <= 0 returns empty without invoking the model."""
+        chunks = [_make_chunk("chunk-1", "content", rank=1)]
+        mock_ce = _make_mock_cross_encoder([0.8])
+        reranker = CrossEncoderReranker(cross_encoder=mock_ce)
+
+        result = reranker.rerank(query="query", chunks=chunks, top_n=0)
+
+        assert result == []
+        mock_ce.predict.assert_not_called()
+
+    def test_reranked_results_preserve_optional_citation_metadata(self):
+        metadata = {
+            "source": "doc.pdf",
+            "chunk_id": "chunk-1",
+            "session_id": "sid-1",
+            "page": 5,
+            "title": "Title",
+            "parent_source": "parent.pdf",
+            "chunk_index": 2,
+        }
+        chunks = [_make_chunk("chunk-1", "content", metadata=metadata)]
+        mock_ce = _make_mock_cross_encoder([0.8])
+        reranker = CrossEncoderReranker(cross_encoder=mock_ce)
+
+        result = reranker.rerank(query="query", chunks=chunks, top_n=1)
+
+        assert result[0].metadata == metadata
 
 
 # ---------------------------------------------------------------------------
@@ -227,6 +268,26 @@ class TestCrossEncoderRerankerScoreUpdate:
 # ---------------------------------------------------------------------------
 
 
+    def test_reranker_reuses_lazy_loaded_model_instance(self):
+        class LazyTestReranker(CrossEncoderReranker):
+            def __init__(self):
+                super().__init__(cross_encoder=None)
+                self.load_calls = 0
+                self.model = _make_mock_cross_encoder([0.5])
+
+            def _load_model(self):
+                self.load_calls += 1
+                return self.model
+
+        reranker = LazyTestReranker()
+        chunks = [_make_chunk("chunk-1", "content", rank=1)]
+
+        reranker.rerank(query="query", chunks=chunks, top_n=1)
+        reranker.rerank(query="query", chunks=chunks, top_n=1)
+
+        assert reranker.load_calls == 1
+
+
 class TestCrossEncoderRerankerErrorHandling:
     """測試模型推論失敗時的錯誤處理。"""
 
@@ -238,8 +299,13 @@ class TestCrossEncoderRerankerErrorHandling:
 
         chunks = [_make_chunk("chunk-1", "文字", rank=1)]
 
-        with pytest.raises(RerankerException):
+        with pytest.raises(RerankerException) as exc_info:
             reranker.rerank(query="查詢", chunks=chunks, top_n=1)
+
+        message = str(exc_info.value)
+        assert "top_n=1" in message
+        assert "chunk_count=1" in message
+        assert reranker._model_name in message
 
     def test_reranker_exception_inherits_from_exception(self):
         """RerankerException 應繼承自 Exception。"""

@@ -406,7 +406,11 @@ class HybridRetriever:
         ):
             try:
                 doc = self._indexer.get_chunk_document(session_id, chunk_id)
-                metadata = dict(doc.metadata)
+                metadata = self._build_citation_metadata(
+                    session_id=session_id,
+                    chunk_id=chunk_id,
+                    metadata=doc.metadata,
+                )
             except Exception:
                 logger.warning(
                     "Session %s chunk %s 無法取得文件資料，跳過。",
@@ -428,6 +432,19 @@ class HybridRetriever:
             )
 
         return results
+
+    @staticmethod
+    def _build_citation_metadata(
+        session_id: str,
+        chunk_id: str,
+        metadata: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        citation_metadata = dict(metadata)
+        if not citation_metadata.get("source"):
+            citation_metadata["source"] = "unknown"
+        citation_metadata["chunk_id"] = chunk_id
+        citation_metadata["session_id"] = session_id
+        return citation_metadata
 
     # ------------------------------------------------------------------
     # 驗證輔助方法

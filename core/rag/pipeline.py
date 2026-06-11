@@ -8,12 +8,13 @@ from typing import Sequence
 from core.log import logger
 from core.rag.chunker import (
     CHUNKING_PROFILES,
+    ChunkingException,
     ChunkingProfile,
     DocumentType,
     TextChunker,
 )
-from core.rag.embeddings import SentenceTransformerEmbedder
-from core.rag.indexer import SessionIndexer
+from core.rag.embeddings import EmbeddingException, SentenceTransformerEmbedder
+from core.rag.indexer import IndexerException, SessionIndexer
 from core.rag.parser import ParsedDocument
 
 
@@ -63,10 +64,20 @@ def ingest_documents(
 
     resolved_embedder = embedder or SentenceTransformerEmbedder()
 
-    chunked_documents = resolved_chunker.chunk_documents(
-        documents=documents,
-        session_id=session_id,
-    )
+    try:
+        chunked_documents = resolved_chunker.chunk_documents(
+            documents=documents,
+            session_id=session_id,
+        )
+    except Exception as error:
+        logger.error(
+            "Session %s chunking failed during ingestion: %s",
+            session_id,
+            error,
+        )
+        raise ChunkingException(
+            f"Session {session_id} chunking failed during ingestion: {error}"
+        ) from error
     if not chunked_documents:
         logger.info("Session %s ingestion 未產生任何 Chunk。", session_id)
         return IngestionResult(
@@ -76,12 +87,28 @@ def ingest_documents(
             embedding_dimension=0,
         )
 
-    embeddings = resolved_embedder.embed_documents(chunked_documents)
-    chunk_ids = session_indexer.ingest_chunk_embeddings(
-        session_id=session_id,
-        documents=chunked_documents,
-        embeddings=embeddings,
-    )
+    try:
+        embeddings = resolved_embedder.embed_documents(chunked_documents)
+    except Exception as error:
+        logger.error(
+            "Session %s embedding failed during ingestion: %s",
+            session_id,
+            error,
+        )
+        raise EmbeddingException(
+            f"Session {session_id} embedding failed during ingestion: {error}"
+        ) from error
+    try:
+        chunk_ids = session_indexer.ingest_chunk_embeddings(
+            session_id=session_id,
+            documents=chunked_documents,
+            embeddings=embeddings,
+        )
+    except IndexerException as error:
+        logger.error("Session %s indexing failed during ingestion: %s", session_id, error)
+        raise IndexerException(
+            f"Session {session_id} indexing failed during ingestion: {error}"
+        ) from error
 
     # 只有當所有步驟都成功後，最後才更新 Session 權重 (AC-4 & Bug A Fix)
     session_indexer.update_session_weights(
