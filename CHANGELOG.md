@@ -10,24 +10,34 @@ The project uses semantic versioning while it is pre-1.0:
 
 ## Unreleased
 
-### Added
-
-- Public documentation set under `docs/`.
-- Clean README and contributing guide for GitHub review.
-- Public roadmap and release strategy.
-- Public Story 1 specifications.
-- Engineering standards for code, tests, documentation, and releases.
-- RAG runtime hardening for partial-update protection, citation metadata normalization, Top-K / Top-N boundaries, model reuse, and failure observability.
-- Codebase language normalization across Python source and tests.
-
 ### Planned
+- PDF parser image and table support — see [Issue #1](https://github.com/AlgoMonokuma/multi-agent-rag-assistant/issues/1).
+- Epic 3: Agent Workflow prototype implementation.
 
-- GitHub release tagging after the next stable milestone.
+## v0.2.2 - 2026-06-11
 
-## v0.2.0 - RAG Runtime Foundation
+### Changed
+- Standardized all docstrings, comments, log messages, and exception
+  messages to English across Python source and tests (Story 2.5.2).
+
+## v0.2.1 - 2026-06-11
 
 ### Added
+- Runtime guardrails: failed ingestion no longer persists partial state.
+- Citation metadata validation for source, chunk_id, and session_id.
+- Top-K and Top-N boundary behavior made explicit and tested.
+- Lazy-loaded model instances reused after first load.
+- Failure paths raise domain exceptions with structured logging.
 
+### Docs
+- Public documentation set under docs/.
+- Clean README and contributing guide.
+- Public roadmap and release strategy.
+- Public Story specifications.
+
+## v0.2.0 - 2026-05-30
+
+### Added
 - PDF and Markdown parser pipeline.
 - Session-isolated FAISS indexing foundation.
 - Text chunking and embedding pipeline.
@@ -36,14 +46,13 @@ The project uses semantic versioning while it is pre-1.0:
 - Cross-encoder re-ranking mechanism.
 
 ### Testing
+- Unit coverage for parser, chunker, indexer, retrieval,
+  document-type profiles, and re-ranking behavior.
 
-- Unit coverage for parser, chunker, indexer, retrieval, document-type profiles, and re-ranking behavior.
-
-## v0.1.0 - Project Foundation
+## v0.1.0 - 2026-04-10
 
 ### Added
-
-- Python project foundation with `uv`.
+- Python project foundation with uv.
 - Secure environment configuration.
 - Shared logging.
 - Initial FastAPI and Streamlit bootstraps.
