@@ -77,5 +77,7 @@ gh release create v0.2.0 --title "v0.2.0 - RAG Runtime Foundation" --notes-file 
 | 2.4 | Hybrid search implementation | Complete |
 | 2.4.5 | Document-type chunking profile | Complete |
 | 2.5 | Re-ranking mechanism | Complete |
-| 2.5.1 | Runtime hardening and harness guardrails | Planned |
+| 2.5.1 | Runtime hardening and harness guardrails | Complete |
 | 2.5.2 | Codebase language normalization | Planned |
+
+- [ ] [Issue #1](https://github.com/AlgoMonokuma/multi-agent-rag-assistant/issues/1): PDF image and table support(scope gap identified after Story 2.1, targeting v0.2.0)
