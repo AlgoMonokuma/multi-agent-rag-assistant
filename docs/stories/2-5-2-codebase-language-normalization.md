@@ -1,14 +1,14 @@
-# Story 2.5.2: Codebase Language Normalization
+# Engineering Task 2.5.2: Codebase Language Normalization
 
 Status: Planned
 
-## User Story
+## Engineering Goal
 
-As a developer, I want code comments, docstrings, logs, exceptions, and test descriptions to use consistent English so that the codebase is easier to review, maintain, and present in a professional GitHub portfolio.
+Normalize developer-facing codebase language so comments, docstrings, logs, exceptions, and test descriptions use consistent English. This keeps the repository easier to review, maintain, and present as a professional GitHub portfolio.
 
 ## Scope
 
-This story performs a non-behavioral language cleanup across source code and tests. It standardizes developer-facing text while preserving runtime behavior, public data contracts, and test coverage.
+This engineering task performs a non-behavioral language cleanup across source code and tests. It standardizes developer-facing text while preserving runtime behavior, public data contracts, and test coverage.
 
 ## Acceptance Criteria
 
@@ -20,7 +20,7 @@ This story performs a non-behavioral language cleanup across source code and tes
 
 ## Implementation Notes
 
-- This is a refactor story, not a feature story.
+- This is an engineering quality task, not a user-facing feature.
 - Keep implementation changes limited to comments, docstrings, log text, exception text, test descriptions, and message assertions.
 - Do not combine this cleanup with runtime hardening, retrieval changes, model changes, or API behavior changes.
 - Prefer precise engineering wording over promotional or AI-generated phrasing.

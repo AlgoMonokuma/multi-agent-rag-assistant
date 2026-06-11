@@ -1,6 +1,6 @@
 # Story 2.5.1: RAG Runtime Hardening and Harness Guardrails
 
-Status: Planned
+Status: Complete
 
 ## User Story
 

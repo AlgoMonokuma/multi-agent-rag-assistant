@@ -12,7 +12,8 @@ The project is currently focused on the RAG runtime foundation. Agent orchestrat
 - Hybrid retrieval using vector search and keyword scoring.
 - Document-type chunking profiles for semantic, precise, and code-heavy content.
 - Cross-encoder re-ranking for improving final retrieval order.
-- Unit tests for parser, chunker, embeddings, indexing, retrieval, and re-ranking behavior.
+- Runtime guardrails for ingestion failure handling, citation metadata, retrieval boundaries, and re-ranking failures.
+- Unit tests for parser, chunker, embeddings, indexing, retrieval, re-ranking, and runtime hardening behavior.
 
 ## Tech Stack
 
@@ -100,6 +101,6 @@ uv run streamlit run app/main.py
 
 ## Development Status
 
-The repository has completed the main Epic 2 RAG runtime stories through re-ranking. The next recommended milestone is runtime hardening: metadata validation, stricter Top-K and Top-N rules, partial-update protection, and model lifecycle guardrails.
+The repository has completed the main Epic 2 RAG runtime stories through runtime hardening. The next planned cleanup is Engineering Task 2.5.2: codebase language normalization for developer-facing comments, logs, exceptions, and tests.
 
 See [docs/roadmap.md](docs/roadmap.md) for the versioning plan.

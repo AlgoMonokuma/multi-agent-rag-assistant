@@ -17,12 +17,11 @@ The project uses semantic versioning while it is pre-1.0:
 - Public roadmap and release strategy.
 - Public Story 1 specifications.
 - Engineering standards for code, tests, documentation, and releases.
+- RAG runtime hardening for partial-update protection, citation metadata normalization, Top-K / Top-N boundaries, model reuse, and failure observability.
 
 ### Planned
 
-- Story 2.5.1: RAG runtime hardening and harness guardrails.
-- Story 2.5.2: Codebase language normalization.
-- Runtime metadata validation and Top-K / Top-N boundary rules.
+- Engineering Task 2.5.2: Codebase language normalization.
 - GitHub release tagging after the next stable milestone.
 
 ## v0.2.0 - RAG Runtime Foundation

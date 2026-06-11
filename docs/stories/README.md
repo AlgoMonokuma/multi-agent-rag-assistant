@@ -1,6 +1,6 @@
 # Story Specifications
 
-These are public story specifications derived from the implementation history. They intentionally exclude private workflow notes, local tool records, generated diffs, and model/tool execution logs.
+These are public story and near-term engineering task specifications derived from the implementation history. They intentionally exclude local tool records, generated diffs, and model/tool execution logs.
 
 | Story | Title | Status |
 | --- | --- | --- |
@@ -14,5 +14,5 @@ These are public story specifications derived from the implementation history. T
 | [2.4](2-4-hybrid-search-implementation.md) | Hybrid search implementation | Complete |
 | [2.4.5](2-4-5-document-type-chunking-profile.md) | Document-type chunking profile | Complete |
 | [2.5](2-5-re-ranking-mechanism.md) | Re-ranking mechanism | Complete |
-| [2.5.1](2-5-1-rag-runtime-hardening.md) | RAG runtime hardening and harness guardrails | Planned |
-| [2.5.2](2-5-2-codebase-language-normalization.md) | Codebase language normalization | Planned |
+| [2.5.1](2-5-1-rag-runtime-hardening.md) | RAG runtime hardening and harness guardrails | Complete |
+| [2.5.2](2-5-2-codebase-language-normalization.md) | Engineering task: codebase language normalization | Planned |
