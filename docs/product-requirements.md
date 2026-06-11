@@ -56,7 +56,7 @@ This project addresses those risks by building a session-scoped RAG runtime with
 - Session data must not leak across FAISS indexes.
 - Tests must cover success paths, boundary behavior, and failure paths.
 - Heavy model instances should be loaded lazily and reused where possible.
-- Public documentation must explain the architecture without exposing private workflow artifacts.
+- Public documentation must explain the architecture without exposing local-only process artifacts.
 
 ## Success Criteria
 

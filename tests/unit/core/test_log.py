@@ -28,5 +28,5 @@ def test_setup_logger_does_not_duplicate_handlers():
 
 def test_default_logger():
     """測試專案預設置 logger 能否正確取得。"""
-    assert logger.name == "bmad"
+    assert logger.name == "multi_agent_rag_assistant"
     assert logger.level == logging.INFO

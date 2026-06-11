@@ -60,7 +60,7 @@ Rationale: English is the most common language for GitHub review, technical inte
   - Out of Scope
   - Definition of Done
 - Public docs must not mention private workflow tools, execution logs, generated diffs, or model/tool transcripts.
-- Public docs must not include real secrets, local absolute paths, or private migration notes.
+- Public docs must not include real secrets, local absolute paths, or local-only process notes.
 - `README.md` should explain the product, setup, architecture summary, and documentation links.
 - `CHANGELOG.md` should summarize milestone-level changes.
 

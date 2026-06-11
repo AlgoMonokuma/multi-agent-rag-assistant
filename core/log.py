@@ -39,7 +39,5 @@ def setup_logger(name: str = "ai_agent") -> logging.Logger:
     return logger
 
 
-# 【工程考量 - 模組化與可維護性】：
-# 我們在這裡直接產生一個「現成可用」的 logger 實體（名叫 bmad，代表我們這個專案）。
-# 其他檔案只需要 `from core.log import logger` 就能直接拿去用，不管在哪個檔案印東西，格式和設定都統一。
-logger = setup_logger("bmad")
+# Shared project logger for modules that import `from core.log import logger`.
+logger = setup_logger("multi_agent_rag_assistant")

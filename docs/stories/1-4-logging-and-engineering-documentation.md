@@ -15,7 +15,7 @@ This story introduces a shared logger and contributor-facing development guidanc
 1. Given runtime code, then it uses the shared logger instead of `print()`.
 2. Given an error path, then logs include useful context.
 3. Given a new contributor, then setup and test instructions are documented.
-4. Given public documentation, then private workflow artifacts are not required to understand the project.
+4. Given public documentation, then local-only process artifacts are not required to understand the project.
 
 ## Implementation Notes
 

@@ -16,7 +16,7 @@ Create a local `.env` from the example file:
 Copy-Item .env.example .env
 ```
 
-Never commit `.env`, credentials, private migration notes, local workflow artifacts, or generated temporary files.
+Never commit `.env`, credentials, local-only tool output, or generated temporary files.
 
 ## Development Workflow
 
@@ -55,7 +55,7 @@ uv run pytest tests/unit/core/rag
 
 The public documentation lives in `docs/`, `README.md`, and `CHANGELOG.md`.
 
-Internal planning files, private workflow artifacts, local tool configuration, generated diffs, and temporary review notes should stay out of GitHub. The repository `.gitignore` is configured to exclude those files by default.
+Internal planning files, local tool configuration, generated diffs, and temporary review notes should stay out of GitHub. Keep machine-specific exclusions in local Git excludes when they are not useful to collaborators.
 
 ## Release Notes
 
