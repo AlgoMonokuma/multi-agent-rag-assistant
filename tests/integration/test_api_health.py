@@ -1,4 +1,4 @@
-"""API 基本整合測試。"""
+"""Test behavior."""
 
 from fastapi.testclient import TestClient
 
@@ -6,7 +6,7 @@ from api.main import app
 
 
 def test_health_check() -> None:
-    """確認健康檢查端點可正常回應。"""
+    """Test behavior."""
     client = TestClient(app)
 
     response = client.get("/health")

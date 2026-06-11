@@ -1,10 +1,10 @@
-"""專案基礎設定的單元測試。"""
+"""Test behavior."""
 
 from core.config import Settings
 
 
 def test_settings_defaults() -> None:
-    """確認設定物件具備可預期的本地開發預設值。"""
+    """Test behavior."""
     config = Settings()
 
     assert config.app_env == "development"

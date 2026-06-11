@@ -18,10 +18,10 @@ The project uses semantic versioning while it is pre-1.0:
 - Public Story 1 specifications.
 - Engineering standards for code, tests, documentation, and releases.
 - RAG runtime hardening for partial-update protection, citation metadata normalization, Top-K / Top-N boundaries, model reuse, and failure observability.
+- Codebase language normalization across Python source and tests.
 
 ### Planned
 
-- Engineering Task 2.5.2: Codebase language normalization.
 - GitHub release tagging after the next stable milestone.
 
 ## v0.2.0 - RAG Runtime Foundation

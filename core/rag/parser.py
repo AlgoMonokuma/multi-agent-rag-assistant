@@ -1,4 +1,4 @@
-"""提供 PDF 與 Markdown 文件解析能力。"""
+"""PDF and Markdown document parsers."""
 
 from __future__ import annotations
 
@@ -17,41 +17,41 @@ except ImportError:
 
 
 class ParserException(Exception):
-    """文件解析相關錯誤。"""
+    """Document parsing error."""
 
 
 class ParsedDocument(BaseModel):
-    """保存解析後的文件內容與 metadata。"""
+    """Parsed document content and metadata."""
 
-    page_content: str = Field(description="解析出的文字內容。")
+    page_content: str = Field(description="Parsed text content.")
     metadata: Dict[str, Any] = Field(
         default_factory=dict,
-        description="文件來源、頁碼、標題等中繼資料。",
+        description="Document source, page, title, and other metadata.",
     )
 
 
 class BaseParser(ABC):
-    """定義解析器共用介面。"""
+    """Shared parser interface."""
 
     @abstractmethod
     def parse(self, file_path: str) -> List[ParsedDocument]:
-        """將檔案解析成 ParsedDocument 清單。"""
+        """Parse a file into a list of ParsedDocument objects."""
 
 
 class PdfParser(BaseParser):
-    """解析 PDF 檔案。"""
+    """Parse PDF files."""
 
     def parse(self, file_path: str) -> List[ParsedDocument]:
-        """解析 PDF，逐頁輸出文件內容。"""
+        """Parse a PDF file and emit one document per page with text."""
         if not os.path.exists(file_path):
-            logger.error("找不到 PDF 檔案: %s", file_path)
-            raise ParserException(f"找不到檔案: {file_path}")
+            logger.error("PDF file not found: %s", file_path)
+            raise ParserException(f"File not found: {file_path}")
 
         if pypdf is None:
-            logger.error("尚未安裝 pypdf。")
-            raise ParserException("解析 PDF 前請先安裝 pypdf。")
+            logger.error("pypdf is not installed.")
+            raise ParserException("Install pypdf before parsing PDF files.")
 
-        logger.info("開始解析 PDF: %s", file_path)
+        logger.info("Starting PDF parse: %s", file_path)
         documents: List[ParsedDocument] = []
 
         try:
@@ -69,23 +69,23 @@ class PdfParser(BaseParser):
                             )
                         )
         except Exception as error:
-            logger.error("PDF 解析失敗: %s", error)
-            raise ParserException(f"PDF 解析失敗: {error}") from error
+            logger.error("PDF parsing failed: %s", error)
+            raise ParserException(f"PDF parsing failed: {error}") from error
 
-        logger.info("PDF 解析完成，共 %s 頁有文字內容。", len(documents))
+        logger.info("PDF parsing completed with %s text pages.", len(documents))
         return documents
 
 
 class MarkdownParser(BaseParser):
-    """解析 Markdown 檔案。"""
+    """Parse Markdown files."""
 
     def parse(self, file_path: str) -> List[ParsedDocument]:
-        """解析 Markdown，保留完整文字與標題。"""
+        """Parse Markdown while preserving full text and the first H1 title."""
         if not os.path.exists(file_path):
-            logger.error("找不到 Markdown 檔案: %s", file_path)
-            raise ParserException(f"找不到檔案: {file_path}")
+            logger.error("Markdown file not found: %s", file_path)
+            raise ParserException(f"File not found: {file_path}")
 
-        logger.info("開始解析 Markdown: %s", file_path)
+        logger.info("Starting Markdown parse: %s", file_path)
 
         try:
             with open(file_path, "r", encoding="utf-8") as file:
@@ -103,8 +103,8 @@ class MarkdownParser(BaseParser):
                     metadata={"source": source_name, "title": title},
                 )
         except Exception as error:
-            logger.error("Markdown 解析失敗: %s", error)
-            raise ParserException(f"Markdown 解析失敗: {error}") from error
+            logger.error("Markdown parsing failed: %s", error)
+            raise ParserException(f"Markdown parsing failed: {error}") from error
 
-        logger.info("Markdown 解析完成。")
+        logger.info("Markdown parsing completed.")
         return [document]

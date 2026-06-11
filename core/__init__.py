@@ -1,1 +1,1 @@
-"""核心共用模組。"""
+"""Shared core package."""

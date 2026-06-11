@@ -1,4 +1,4 @@
-"""RAG 核心模組匯出。"""
+"""RAG core package exports."""
 
 from core.rag.chunker import (
     CHUNKING_PROFILES,

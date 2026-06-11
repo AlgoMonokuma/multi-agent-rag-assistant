@@ -1,4 +1,4 @@
-"""文字分塊與嵌入測試。"""
+"""Test behavior."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from core.rag.parser import ParsedDocument
 
 
 class FakeSplitter:
-    """模擬文字分塊器。"""
+    """Test behavior."""
 
     def __init__(self, outputs: List[str]) -> None:
         self.outputs = outputs
@@ -23,7 +23,7 @@ class FakeSplitter:
 
 
 class FakeModel:
-    """模擬嵌入模型。"""
+    """Test behavior."""
 
     def __init__(self, outputs: list[list[float]]) -> None:
         self.outputs = outputs
@@ -33,23 +33,23 @@ class FakeModel:
 
 
 def test_chunk_documents_preserves_metadata_and_adds_chunk_fields() -> None:
-    """分塊後應保留原始 metadata 並補上追蹤欄位。"""
-    chunker = TextChunker(splitter=FakeSplitter(outputs=["第一段", "第二段"]))
+    """Test behavior."""
+    chunker = TextChunker(splitter=FakeSplitter(outputs=['test content', 'test content']))
 
     chunks = chunker.chunk_documents(
         documents=[
             ParsedDocument(
-                page_content="原始內容",
-                metadata={"source": "guide.md", "title": "指南"},
+                page_content='test content',
+                metadata={"source": "guide.md", "title": 'test content'},
             )
         ],
         session_id="session-1",
     )
 
-    assert [chunk.page_content for chunk in chunks] == ["第一段", "第二段"]
+    assert [chunk.page_content for chunk in chunks] == ['test content', 'test content']
     assert chunks[0].metadata == {
         "source": "guide.md",
-        "title": "指南",
+        "title": 'test content',
         "chunk_index": 0,
         "document_index": 0,
         "parent_source": "guide.md",
@@ -59,16 +59,16 @@ def test_chunk_documents_preserves_metadata_and_adds_chunk_fields() -> None:
 
 
 def test_chunker_raises_when_dependency_is_missing(monkeypatch: pytest.MonkeyPatch) -> None:
-    """缺少文字分塊依賴時應丟出明確錯誤。"""
+    """Test behavior."""
 
     def fail_loader(self: TextChunker) -> object:
-        raise ChunkingException("缺少套件")
+        raise ChunkingException('test content')
 
     monkeypatch.setattr(TextChunker, "_create_default_splitter", fail_loader)
 
     chunker = TextChunker()
 
-    with pytest.raises(ChunkingException, match="缺少套件"):
+    with pytest.raises(ChunkingException, match='test content'):
         chunker.chunk_documents(
             documents=[ParsedDocument(page_content="text", metadata={})],
             session_id="session-1",
@@ -76,7 +76,7 @@ def test_chunker_raises_when_dependency_is_missing(monkeypatch: pytest.MonkeyPat
 
 
 def test_embed_documents_returns_float32_matrix_with_expected_dimension() -> None:
-    """嵌入器應輸出 float32 且符合預期維度。"""
+    """Test behavior."""
     model = FakeModel(outputs=[[0.1] * 384, [0.2] * 384])
     embedder = SentenceTransformerEmbedder(model=model)
 
@@ -92,8 +92,8 @@ def test_embed_documents_returns_float32_matrix_with_expected_dimension() -> Non
 
 
 def test_embedder_raises_when_dimension_does_not_match() -> None:
-    """嵌入維度錯誤時應拒絕處理。"""
+    """Test behavior."""
     embedder = SentenceTransformerEmbedder(model=FakeModel(outputs=[[0.1] * 8]))
 
-    with pytest.raises(EmbeddingException, match="嵌入維度錯誤"):
+    with pytest.raises(EmbeddingException, match="Embedding dimension mismatch"):
         embedder.embed_documents([ParsedDocument(page_content="A", metadata={})])

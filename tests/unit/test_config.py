@@ -1,4 +1,4 @@
-"""設定載入與安全取用的單元測試。"""
+"""Test behavior."""
 
 from pathlib import Path
 
@@ -8,7 +8,7 @@ from core.config import Settings
 
 
 def test_settings_default_values() -> None:
-    """驗證預設設定可在未提供環境變數時正常載入。"""
+    """Test behavior."""
     config = Settings()
 
     assert config.app_env == "development"
@@ -19,7 +19,7 @@ def test_settings_default_values() -> None:
 
 
 def test_settings_read_environment_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
-    """驗證環境變數可覆寫預設值。"""
+    """Test behavior."""
     monkeypatch.setenv("APP_ENV", "test")
     monkeypatch.setenv("APP_HOST", "0.0.0.0")
     monkeypatch.setenv("APP_PORT", "9000")
@@ -39,17 +39,17 @@ def test_settings_read_environment_overrides(monkeypatch: pytest.MonkeyPatch) ->
 def test_require_groq_api_key_raises_clear_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """驗證缺少金鑰時會得到清楚的錯誤訊息。"""
+    """Test behavior."""
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
 
     config = Settings()
 
-    with pytest.raises(ValueError, match="缺少 GROQ_API_KEY"):
+    with pytest.raises(ValueError, match='GROQ_API_KEY is missing'):
         config.require_groq_api_key()
 
 
 def test_env_example_matches_settings_contract() -> None:
-    """驗證範例環境變數檔案涵蓋目前設定契約。"""
+    """Test behavior."""
     env_example = Path(".env.example").read_text(encoding="utf-8")
 
     expected_keys = {

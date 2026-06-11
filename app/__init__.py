@@ -1,1 +1,1 @@
-"""應用程式層模組。"""
+"""Application layer package."""

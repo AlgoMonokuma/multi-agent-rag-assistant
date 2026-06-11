@@ -1,6 +1,6 @@
 # Engineering Task 2.5.2: Codebase Language Normalization
 
-Status: Planned
+Status: Complete
 
 ## Engineering Goal
 
@@ -40,3 +40,10 @@ This engineering task performs a non-behavioral language cleanup across source c
 - Public docs remain English and aligned with `docs/engineering-standards.md`.
 - Message-based test assertions are updated intentionally.
 - Full test suite passes.
+
+## Completion Notes
+
+- Normalized developer-facing Python text across `api/`, `app/`, `core/`, and `tests/`.
+- Preserved public API contracts and runtime behavior.
+- Verified with a non-ASCII scan across Python source and tests.
+- Verified with the full test suite: `106 passed`.

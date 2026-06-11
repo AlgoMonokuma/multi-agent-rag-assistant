@@ -1,4 +1,4 @@
-"""串接 Chunking、Embedding 與 Session 索引流程。"""
+"""Chunking, embedding, and session indexing pipeline."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from core.rag.parser import ParsedDocument
 
 @dataclass(slots=True)
 class IngestionResult:
-    """保存單次 Session ingestion 的輸出摘要。"""
+    """Summary for one session ingestion run."""
 
     session_id: str
     chunk_ids: list[str]
@@ -36,30 +36,21 @@ def ingest_documents(
     embedder: SentenceTransformerEmbedder | None = None,
     document_type: DocumentType | None = None,
 ) -> IngestionResult:
-    """將文件寫入指定 Session 的 chunk 與向量索引。
-
-    Args:
-        session_indexer: 管理 Session 索引的 SessionIndexer 實例。
-        session_id: 目標 Session 的唯一識別碼。
-        documents: 待攝入的 ParsedDocument 序列。
-        chunker: 可注入的自訂 TextChunker；None 時依 document_type 建立。
-        embedder: 可注入的自訂嵌入器；None 時使用預設 SentenceTransformerEmbedder。
-        document_type: 文件類型；None 時套用 SEMANTIC Profile（向下相容）。
-    """
+    """Write documents into a session-scoped chunk and vector index."""
     profile: ChunkingProfile = CHUNKING_PROFILES[
         document_type if document_type is not None else DocumentType.SEMANTIC
     ]
     if chunker is None:
         resolved_chunker = TextChunker(profile=profile)
     else:
-        # 若外部已注入自訂 chunker，則尊重該實例設定
-        # 但仍會依照 document_type (或預設的 SEMANTIC) 更新 Session 權重
         resolved_chunker = chunker
         if document_type is not None:
             logger.warning(
-                "Session %s: 同時提供了自訂 chunker 與 document_type (%s)。"
-                "將使用自訂 chunker 進行分塊，但檢索權重會套用該類型 Profile 的設定。",
-                session_id, document_type
+                "Session %s received a custom chunker and document_type %s. "
+                "Chunking will use the custom chunker, while retrieval weights "
+                "will use the selected document type profile.",
+                session_id,
+                document_type,
             )
 
     resolved_embedder = embedder or SentenceTransformerEmbedder()
@@ -78,8 +69,9 @@ def ingest_documents(
         raise ChunkingException(
             f"Session {session_id} chunking failed during ingestion: {error}"
         ) from error
+
     if not chunked_documents:
-        logger.info("Session %s ingestion 未產生任何 Chunk。", session_id)
+        logger.info("Session %s ingestion produced no chunks.", session_id)
         return IngestionResult(
             session_id=session_id,
             chunk_ids=[],
@@ -98,6 +90,7 @@ def ingest_documents(
         raise EmbeddingException(
             f"Session {session_id} embedding failed during ingestion: {error}"
         ) from error
+
     try:
         chunk_ids = session_indexer.ingest_chunk_embeddings(
             session_id=session_id,
@@ -110,14 +103,13 @@ def ingest_documents(
             f"Session {session_id} indexing failed during ingestion: {error}"
         ) from error
 
-    # 只有當所有步驟都成功後，最後才更新 Session 權重 (AC-4 & Bug A Fix)
     session_indexer.update_session_weights(
         session_id=session_id,
         vector_weight=profile.vector_weight,
         keyword_weight=profile.keyword_weight,
     )
 
-    logger.info("Session %s 完成 ingestion，共 %s 筆 Chunk。", session_id, len(chunk_ids))
+    logger.info("Session %s completed ingestion with %s chunks.", session_id, len(chunk_ids))
     return IngestionResult(
         session_id=session_id,
         chunk_ids=chunk_ids,

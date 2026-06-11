@@ -1,4 +1,4 @@
-"""專案共享設定載入模組。"""
+"""Shared application settings loader."""
 
 from typing import Literal
 
@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """集中管理應用程式設定與敏感資訊。"""
+    """Centralized application settings and sensitive configuration."""
 
     groq_api_key: SecretStr | None = Field(
         default=None,
@@ -30,16 +30,16 @@ class Settings(BaseSettings):
 
     @property
     def has_groq_api_key(self) -> bool:
-        """回傳目前是否已提供 Groq API 金鑰。"""
+        """Return whether a usable Groq API key is configured."""
         return self.groq_api_key is not None and bool(
             self.groq_api_key.get_secret_value().strip()
         )
 
     def require_groq_api_key(self) -> str:
-        """在需要使用 Groq 時回傳金鑰，若缺少則拋出明確錯誤。"""
+        """Return the Groq API key or raise a clear configuration error."""
         if not self.has_groq_api_key:
             raise ValueError(
-                "缺少 GROQ_API_KEY。請在 .env 設定後再啟用需要 Groq 的功能。"
+                "GROQ_API_KEY is missing. Set it in .env before enabling Groq-backed features."
             )
         return self.groq_api_key.get_secret_value().strip()
 
