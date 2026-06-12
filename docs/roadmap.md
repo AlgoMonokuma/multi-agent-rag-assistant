@@ -1,17 +1,4 @@
-# Roadmap and Release Strategy
-
-## Current Recommendation
-
-Do not wait until the whole project is finished before publishing documentation. For an interview-facing side project, it is better to push clean documentation as the project evolves because it shows iteration, planning, and engineering discipline.
-
-The right pattern is:
-
-```text
-story -> focused commit -> tests -> changelog update -> push
-milestone -> tag -> GitHub Release
-```
-
-Stories should be pushed as regular commits. GitHub Releases should be reserved for meaningful milestones.
+# Project Roadmap & Release Strategy
 
 ## Versioning Plan
 
@@ -26,40 +13,21 @@ Stories should be pushed as regular commits. GitHub Releases should be reserved 
 | `v0.5.0` | Deployable demo | Docker, CI, and hosting path are ready. |
 | `v1.0.0` | Interview demo release | End-to-end demo is stable, documented, and easy to run. |
 
-## How Many Stories Per Release?
-
-Use commits for every completed story. Use releases only when a reviewer can understand a meaningful capability.
-
-Recommended cadence:
-
-- Push every story or small group of related fixes.
-- Create a release after 3 to 6 related stories, or after one complete project capability.
-- Create patch releases for hardening, bug fixes, documentation cleanup, or test improvements.
-
-For this project, Story 2.1 through Story 2.5 together form a good `v0.2.0` milestone because they complete the RAG runtime foundation. Story 2.5.1 and Engineering Task 2.5.2 are patch-level quality milestones that harden and polish the runtime before moving into agent orchestration.
-
-## Public Planning Policy
-
-Public documentation should show enough planning for collaborators and reviewers to understand direction without publishing every internal backlog detail too early.
-
-- `docs/stories/` contains completed stories and the next near-term story or engineering task.
-- `docs/roadmap.md` contains the broader Epic 3, Epic 4, and Epic 5 direction.
-- Future detailed story specs are added when the team is ready to implement or invite contribution on that work.
-- GitHub Issues can be used later to expose contributor-friendly tasks without turning every internal planning item into a permanent public spec.
-
 ## Future Epic Direction
 
 ### Epic 3: Agent Workflow Prototype
 
-Goal: Build the first multi-agent reasoning workflow on top of the hardened RAG runtime.
+Goal: Build the first multi-agent reasoning workflow on top of the hardened RAG runtime using LangGraph.
 
 Planned direction:
 
-- LangGraph state graph foundation.
-- Researcher agent that can query retrieved context.
-- Reporter agent that can produce grounded answers.
-- Web search tool integration through MCP when appropriate.
-- Reviewer or quality gate agent for answer validation.
+- LangGraph state graph foundation for cyclic reasoning and state persistence.
+- Observability and tracing setup (LangSmith or Arize Phoenix) at the start of agent development to monitor reasoning paths.
+- Researcher agent that can query retrieved context and identify information gaps.
+- Reporter agent that can produce grounded answers with explicit citation mapping.
+- Web search tool integration through MCP when local context is insufficient.
+- Error recovery and state rollback for multi-agent workflow failures.
+- Quality gate agent for answer validation against user intent.
 
 ### Epic 4: Streaming User Experience
 
@@ -80,52 +48,28 @@ Goal: Prepare the project for interview review and hosted demonstration.
 Planned direction:
 
 - Dockerized runtime suitable for Hugging Face Spaces or similar hosting.
+- RAG evaluation benchmark using RAGAS or equivalent tooling to quantify Hit Rate, Faithfulness, and Answer Relevance.
 - GitHub Actions quality checks.
 - Release preparation, documentation cleanup, and demo readiness.
 - Versioned GitHub Releases for meaningful milestones.
-
-## GitHub Release Checklist
-
-Before creating a release:
-
-1. Confirm README and docs are current.
-2. Update `CHANGELOG.md`.
-3. Run relevant tests.
-4. Commit all release-related documentation and code.
-5. Create a version tag.
-6. Push the tag.
-7. Draft GitHub Release notes from `CHANGELOG.md`.
-
-Example commands:
-
-```powershell
-git tag v0.2.0
-git push origin v0.2.0
-```
-
-If the GitHub CLI is available, a release can be created with:
-
-```powershell
-gh release create v0.2.0 --title "v0.2.0 - RAG Runtime Foundation" --notes-file CHANGELOG.md
-```
 
 ## Story Status
 
 | Story | Title | Public Status |
 | --- | --- | --- |
-| 1.1 | Project foundation initialization | Complete |
-| 1.2 | TDD test environment | Complete |
-| 1.3 | Secure config loading | Complete |
-| 1.4 | Shared logging and engineering docs | Complete |
-| 2.1 | Document ingestion and parser pipeline | Complete |
-| 2.2 | Session-isolated indexing foundation | Complete |
-| 2.3 | Text chunking and embedding pipeline | Complete |
-| 2.4 | Hybrid search implementation | Complete |
-| 2.4.5 | Document-type chunking profile | Complete |
-| 2.5 | Re-ranking mechanism | Complete |
-| 2.5.1 | Runtime hardening and harness guardrails | Complete |
-| 2.5.2 | Engineering task: codebase language normalization | Complete |
+| [1.1](stories/1-1-project-foundation-initialization.md) | Project foundation initialization | Complete |
+| [1.2](stories/1-2-configure-tdd-test-environment.md) | TDD test environment | Complete |
+| [1.3](stories/1-3-environment-variable-and-secure-config-loading.md) | Secure config loading | Complete |
+| [1.4](stories/1-4-logging-and-engineering-documentation.md) | Shared logging and engineering docs | Complete |
+| [2.1](stories/2-1-document-ingestion-and-parser-pipeline.md) | Document ingestion and parser pipeline | Complete |
+| [2.2](stories/2-2-session-isolated-indexing-foundation.md) | Session-isolated indexing foundation | Complete |
+| [2.3](stories/2-3-text-chunking-and-embedding-pipeline.md) | Text chunking and embedding pipeline | Complete |
+| [2.4](stories/2-4-hybrid-search-implementation.md) | Hybrid search implementation | Complete |
+| [2.4.5](stories/2-4-5-document-type-chunking-profile.md) | Document-type chunking profile | Complete |
+| [2.5](stories/2-5-re-ranking-mechanism.md) | Re-ranking mechanism | Complete |
+| [2.5.1](stories/2-5-1-rag-runtime-hardening.md) | Runtime hardening and harness guardrails | Complete |
+| [2.5.2](stories/2-5-2-codebase-language-normalization.md) | Engineering task: codebase language normalization | Complete |
 
 ## Known Scope Gaps & Backlog
 
-- [ ] [Issue #1](https://github.com/AlgoMonokuma/multi-agent-rag-assistant/issues/1): PDF image and table support (scope gap identified after Story 2.1, targeting v0.2.0)
+- [ ] [Issue #1](https://github.com/AlgoMonokuma/multi-agent-rag-assistant/issues/1): PDF image and table support (scope gap identified after Story 2.1, targeting v0.3.0 or later)
