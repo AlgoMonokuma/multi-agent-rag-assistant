@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import math
 import re
+
+import jieba
 from collections import Counter
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Protocol, Sequence
@@ -389,8 +391,6 @@ class HybridRetriever:
     def _tokenize(text: str) -> List[str]:
         """Tokenize text for lightweight keyword search."""
         tokens: List[str] = []
-
-        import jieba
 
         # Extract contiguous blocks of CJK characters and tokenize with jieba
         cjk_blocks = re.findall(r"[\u4e00-\u9fff]+", text)
