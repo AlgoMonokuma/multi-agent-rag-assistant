@@ -626,3 +626,27 @@ class TestErrorHandling:
 
         assert len(result.results) <= 3  # Test note.
         assert result.total_found == len(result.results)
+
+
+# ---------------------------------------------------------------------------
+# Test note.
+# ---------------------------------------------------------------------------
+
+class TestTokenization:
+    """Test tokenization logic."""
+
+    def test_tokenize_preserves_ascii_and_segments_cjk_blocks(self) -> None:
+        """Verify CJK text is segmented correctly while ASCII remains whole."""
+        tokens = HybridRetriever._tokenize("Hello world 人工智慧 AI測試")
+        
+        # ASCII should remain intact and lowercase
+        assert "hello" in tokens
+        assert "world" in tokens
+        assert "ai" in tokens
+        
+        # CJK text should be segmented; specific jieba output depends on dict,
+        # but at minimum we expect standard words or the fallback chunks 
+        # (Since "人工智慧" and "測試" are standard dictionary words, they should not be torn to single chars)
+        # Using a reliable test string like "測試" testing boundaries
+        test_tokens = HybridRetriever._tokenize("測試")
+        assert "測試" in test_tokens

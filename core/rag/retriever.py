@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import math
 import re
+
+import jieba
 from collections import Counter
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Protocol, Sequence
@@ -390,10 +392,12 @@ class HybridRetriever:
         """Tokenize text for lightweight keyword search."""
         tokens: List[str] = []
 
-        for char in text:
-            if "\u4e00" <= char <= "\u9fff":
-                tokens.append(char)
+        # Extract contiguous blocks of CJK characters and tokenize with jieba
+        cjk_blocks = re.findall(r"[\u4e00-\u9fff]+", text)
+        for block in cjk_blocks:
+            tokens.extend(jieba.cut(block))
 
+        # Preserve ASCII path as required by the specifications
         ascii_tokens = re.findall(r"[a-zA-Z0-9]+", text.lower())
         tokens.extend(ascii_tokens)
 
