@@ -129,6 +129,13 @@ The current unit suite focuses on:
 - Document-type profile behavior.
 - Re-ranking behavior and fallback paths.
 
+## Evaluation Strategy (Heterogeneous Validation)
+
+The system employs heterogeneous validation across two levels to ensure robustness:
+
+1.  **Agent Diversity**: Multi-agent workflows (Epic 3) use different model families (e.g., Llama and Qwen) to reduce correlated reasoning failures.
+2.  **RAG Metrics**: Retrieval and generation quality are measured using a combination of automated metrics (RAGAS), LLM-as-judge, and metadata integrity checks.
+
 ## Known Technical Debt
 
 - API and UI are currently bootstrap-level and do not yet expose the full RAG workflow.
@@ -138,3 +145,4 @@ The current unit suite focuses on:
 - Session persistence (disk-backed index) is planned for Epic 5.
 - File upload validation (magic-byte check) is planned for Epic 4 API layer.
 - LLM answer generation from retrieved context is planned for Story 3.2.
+- Heterogeneous Evaluation Framework (Story 5.5) is required to quantitatively measure RAG quality.
