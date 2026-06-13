@@ -12,9 +12,11 @@ dependencies = [
   "numpy>=2.0.0",
   "pydantic-settings>=2.6.0",
   "sentence-transformers>=3.0.0",
+  "jieba>=0.42.1",
   "streamlit>=1.42.0",
   "uvicorn>=0.34.0",
   "pypdf>=4.0.0",
+  "jieba>=0.42.1",
 ]
 
 [dependency-groups]
