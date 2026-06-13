@@ -5,38 +5,46 @@
 The system is organized around a session-isolated RAG runtime. Each user session owns its own FAISS index and metadata registry. Parsed documents move through chunking, embedding, indexing, hybrid retrieval, and optional cross-encoder re-ranking before final context is assembled for answer generation.
 
 ```text
-PDF / Markdown
+File Upload (PDF / Markdown / TXT)
+      |
+      v
+FileValidator -> extension whitelist + magic-byte check
       |
       v
 Parser -> ParsedDocument[]
       |
       v
-TextChunker -> chunk metadata
+TextChunker -> chunk metadata (CJK-aware splitting)
       |
       v
-SentenceTransformerEmbedder -> float32 vectors
+MultilingualEmbedder -> float32 vectors
       |
       v
-SessionIndexer -> per-session FAISS index + metadata maps
+SessionIndexer -> per-session FAISS index + metadata maps (write-serialized)
       |
       v
-HybridRetriever -> vector hits + keyword hits
+HybridRetriever -> vector hits + keyword hits (jieba CJK tokenizer)
       |
       v
 CrossEncoderReranker -> final ordered chunks
+      |
+      v
+LLM Answer Generator -> grounded answer with citations
 ```
 
 ## Runtime Components
 
 | Component | File | Responsibility |
 | --- | --- | --- |
-| Parser | `core/rag/parser.py` | Convert PDF and Markdown files into normalized parsed documents. |
+| FileValidator | `core/rag/validator.py` (planned) | Reject disallowed file types using extension whitelist and magic-byte check before parsing. |
+| Parser | `core/rag/parser.py` | Convert PDF, Markdown, and TXT files into normalized parsed documents. |
 | Chunker | `core/rag/chunker.py` | Split parsed text and apply document-type chunking profiles. |
-| Embedder | `core/rag/embeddings.py` | Generate `float32` sentence-transformer vectors. |
-| Indexer | `core/rag/indexer.py` | Manage session-scoped FAISS indexes and metadata maps. |
+| Embedder | `core/rag/embeddings.py` | Generate `float32` multilingual sentence-transformer vectors. |
+| Indexer | `core/rag/indexer.py` | Manage session-scoped FAISS indexes and metadata maps with write serialization. |
 | Pipeline | `core/rag/pipeline.py` | Orchestrate chunking, embedding, indexing, and profile weight updates. |
-| Retriever | `core/rag/retriever.py` | Merge vector and keyword retrieval results with deterministic ordering. |
+| Retriever | `core/rag/retriever.py` | Merge vector and keyword retrieval results using CJK-aware tokenization. |
 | Reranker | `core/rag/reranker.py` | Re-rank candidate chunks with a cross-encoder model. |
+| LLM Generator | `core/rag/generator.py` (planned) | Call the configured LLM with retrieved context and return a grounded answer. |
 | API | `api/main.py` | Provide the FastAPI application boundary. |
 | UI | `app/main.py` | Provide the Streamlit application boundary. |
 
@@ -53,12 +61,41 @@ The current architecture uses in-memory FAISS indexes per session. A `SessionInd
 
 This design intentionally avoids cross-session sharing of indexes and metadata. Model instances may be reused, but user documents and retrieval metadata stay session-scoped.
 
+### Concurrency Safety
+
+FAISS `IndexFlatL2.add()` is not thread-safe. Because FastAPI handles concurrent requests on the same event loop, all FAISS write operations (ingestion) must be serialized using an `asyncio.Lock` or equivalent per-session lock. Read operations (search) do not mutate index state and are safe to run concurrently.
+
+### Session Persistence Direction (Planned — Epic 5)
+
+The current in-memory store is intentional for the development phase but unsuitable for production. The planned direction:
+
+- Store FAISS indexes and chunk metadata to disk or a lightweight vector store (e.g., ChromaDB, Qdrant, or SQLite + FAISS on-disk).
+- Persist the `session_id` in the user's browser `localStorage` so they can resume their session after a page reload or server restart without requiring a login system.
+- On session resume, load the saved index from disk rather than re-ingesting all documents.
+
+## Embedding Model
+
+The default embedding model is `paraphrase-multilingual-MiniLM-L12-v2`:
+
+- Dimension: 384-dimension `float32` vectors (compatible with existing FAISS `IndexFlatL2(384)`).
+- Language coverage: 50+ languages including English, Traditional Chinese, Simplified Chinese, Japanese, Korean, German, and French.
+- Rationale: The previously planned `all-MiniLM-L6-v2` model is English-primary and unsuitable for the multilingual user base.
+
 ## Retrieval Strategy
 
 Hybrid retrieval combines two signals:
 
-- Vector similarity for semantic matching.
+- Vector similarity for semantic matching (multilingual, model-driven).
 - Keyword scoring for exact or precise matches.
+
+### CJK Tokenization
+
+The current `_tokenize` implementation splits CJK text character-by-character, which significantly degrades BM25 keyword scoring for Chinese, Japanese, and Korean content. The planned fix is to use `jieba` for Chinese word segmentation and preserve the ASCII token path for Latin-script languages:
+
+```
+Current:  "人工智慧" → ['人', '工', '智', '慧']   # each character, BM25 score distorted
+Planned:  "人工智慧" → ['人工智慧']               # correct word boundary, accurate IDF
+```
 
 The document-type profile can tune `vector_weight` and `keyword_weight`:
 
@@ -94,6 +131,10 @@ The current unit suite focuses on:
 
 ## Known Technical Debt
 
-- Public docs have been cleaned, but some internal artifacts and legacy comments still contain encoding noise.
 - API and UI are currently bootstrap-level and do not yet expose the full RAG workflow.
-- Runtime hardening around partial updates and metadata validation is planned as the next story.
+- Embedding model migration from `all-MiniLM-L6-v2` to `paraphrase-multilingual-MiniLM-L12-v2` is planned as Story 3.1.x.
+- CJK-aware tokenization using jieba is planned as part of Story 3.1.x.
+- FAISS write serialization (asyncio.Lock) is planned before any concurrent API endpoint exposes ingestion.
+- Session persistence (disk-backed index) is planned for Epic 5.
+- File upload validation (magic-byte check) is planned for Epic 4 API layer.
+- LLM answer generation from retrieved context is planned for Story 3.2.
