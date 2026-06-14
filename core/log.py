@@ -20,3 +20,7 @@ def setup_logger(name: str = "multi_agent_rag_assistant") -> logging.Logger:
 
 
 logger = setup_logger()
+
+# Alias for modules that prefer the get_logger(name) convention.
+# Both functions are equivalent; setup_logger is the canonical name.
+get_logger = setup_logger

@@ -21,10 +21,11 @@ Goal: Build the first multi-agent reasoning workflow on top of the hardened RAG 
 
 Planned direction:
 
+- **Story 3.1**: LangGraph state graph foundation is complete. The graph defines researcher, reporter, and reviewer stub nodes with conditional retry routing and a max-iteration safety ceiling.
+
 - **Story 3.1.1**: Migrate embedding model to `paraphrase-multilingual-MiniLM-L12-v2` and add jieba-based CJK word segmentation to the BM25 tokenizer. Prerequisite for accurate non-English retrieval.
 - **Story 3.1.2**: Add plain-text (`.txt`) parser so users can upload plain documents in addition to PDF and Markdown.
 - **Story 3.2**: LLM answer generation using Groq API — prompt assembly, context budget management, citation mapping, and graceful API failure handling. This is the first Story that produces a usable end-to-end answer.
-- LangGraph state graph foundation for cyclic reasoning and state persistence.
 - Observability and tracing setup (LangSmith or Arize Phoenix) at the start of agent development.
 - Researcher agent that can query retrieved context and identify information gaps.
 - Reporter agent that can produce grounded answers with explicit citation mapping.
@@ -74,10 +75,12 @@ Planned direction:
 | [2.5](stories/2-5-re-ranking-mechanism.md) | Re-ranking mechanism | Complete |
 | [2.5.1](stories/2-5-1-rag-runtime-hardening.md) | Runtime hardening and harness guardrails | Complete |
 | [2.5.2](stories/2-5-2-codebase-language-normalization.md) | Engineering task: codebase language normalization | Complete |
+| [3.1](stories/3-1-langgraph-state-graph-foundation.md) | LangGraph state graph foundation | Complete |
 
 ## Known Scope Gaps & Backlog
 
 - [ ] [Issue #1](https://github.com/AlgoMonokuma/multi-agent-rag-assistant/issues/1): PDF image and table support (scope gap identified after Story 2.1, targeting v0.3.0 or later)
+- [x] LangGraph state graph foundation with stub researcher/reporter/reviewer nodes (Story 3.1)
 - [ ] Embedding model migration: `all-MiniLM-L6-v2` → `paraphrase-multilingual-MiniLM-L12-v2` (Story 3.1.1)
 - [ ] CJK-aware BM25 tokenization using jieba (Story 3.1.1)
 - [ ] LLM answer generation end-to-end (Story 3.2 — currently 0% implemented despite Groq key being configured)
