@@ -14,6 +14,13 @@ The project uses semantic versioning while it is pre-1.0:
 - Story 3.1 LangGraph workflow foundation with typed agent state,
   researcher/reporter/reviewer stub nodes, lazy graph compilation, and
   conditional retry routing.
+- Story 3.1.1 multilingual retrieval foundation: default embeddings now use
+  `paraphrase-multilingual-MiniLM-L12-v2`, and keyword retrieval uses
+  CJK-aware tokenization with `jieba` for Han text.
+
+### Changed
+- Keyword tokenization now preserves ASCII, Japanese kana, and Korean Hangul
+  token groups for multilingual BM25-style matching.
 
 ### Planned
 - PDF parser image and table support — see [Issue #1](https://github.com/AlgoMonokuma/multi-agent-rag-assistant/issues/1).
