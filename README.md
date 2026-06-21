@@ -14,6 +14,7 @@ The project is currently focused on the RAG runtime foundation. Agent orchestrat
 - Cross-encoder re-ranking for improving final retrieval order.
 - Runtime guardrails for ingestion failure handling, citation metadata, retrieval boundaries, and re-ranking failures.
 - English developer-facing comments, logs, exceptions, and tests for cleaner public review.
+- LangGraph agent workflow foundation with researcher, reporter, and reviewer stub nodes.
 - Unit tests for parser, chunker, embeddings, indexing, retrieval, re-ranking, and runtime hardening behavior.
 
 ## Tech Stack
@@ -102,6 +103,6 @@ uv run streamlit run app/main.py
 
 ## Development Status
 
-The repository has completed the main Epic 2 RAG runtime stories, runtime hardening, and codebase language normalization. The next planned direction is Epic 3: agent workflow prototyping.
+The repository has completed the main Epic 2 RAG runtime stories, runtime hardening, codebase language normalization, and Story 3.1 LangGraph workflow foundation. The next planned direction is Epic 3: agent workflow prototyping.
 
 See [docs/roadmap.md](docs/roadmap.md) for the versioning plan.

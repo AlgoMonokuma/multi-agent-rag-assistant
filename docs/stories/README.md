@@ -16,3 +16,4 @@ These are public story and near-term engineering task specifications derived fro
 | [2.5](2-5-re-ranking-mechanism.md) | Re-ranking mechanism | Complete |
 | [2.5.1](2-5-1-rag-runtime-hardening.md) | RAG runtime hardening and harness guardrails | Complete |
 | [2.5.2](2-5-2-codebase-language-normalization.md) | Engineering task: codebase language normalization | Complete |
+| [3.1](3-1-langgraph-state-graph-foundation.md) | LangGraph state graph foundation | Complete |

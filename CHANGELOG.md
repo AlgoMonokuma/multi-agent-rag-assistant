@@ -10,6 +10,11 @@ The project uses semantic versioning while it is pre-1.0:
 
 ## Unreleased
 
+### Added
+- Story 3.1 LangGraph workflow foundation with typed agent state,
+  researcher/reporter/reviewer stub nodes, lazy graph compilation, and
+  conditional retry routing.
+
 ### Planned
 - PDF parser image and table support — see [Issue #1](https://github.com/AlgoMonokuma/multi-agent-rag-assistant/issues/1).
 - Epic 3: Agent Workflow prototype implementation.
