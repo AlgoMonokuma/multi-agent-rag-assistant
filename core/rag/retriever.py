@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import math
 import re
-
-import jieba
 from collections import Counter
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Protocol, Sequence
+
+import jieba
 
 from core.log import logger
 
@@ -76,6 +76,13 @@ class HybridSearchResult:
 DEFAULT_TOP_K = 10
 DEFAULT_VECTOR_WEIGHT = 0.7
 DEFAULT_KEYWORD_WEIGHT = 0.3
+KEYWORD_TOKEN_PATTERN = re.compile(
+    r"[a-zA-Z0-9]+"
+    r"|[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]+"
+    r"|[\u3040-\u30ff\u31f0-\u31ff\uff66-\uff9f]+"
+    r"|[\u1100-\u11ff\u3130-\u318f\uac00-\ud7af\ua960-\ua97f\ud7b0-\ud7ff]+"
+)
+HAN_TOKEN_PATTERN = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]+")
 
 
 class HybridRetriever:
@@ -392,13 +399,11 @@ class HybridRetriever:
         """Tokenize text for lightweight keyword search."""
         tokens: List[str] = []
 
-        # Extract contiguous blocks of CJK characters and tokenize with jieba
-        cjk_blocks = re.findall(r"[\u4e00-\u9fff]+", text)
-        for block in cjk_blocks:
-            tokens.extend(jieba.cut(block))
-
-        # Preserve ASCII path as required by the specifications
-        ascii_tokens = re.findall(r"[a-zA-Z0-9]+", text.lower())
-        tokens.extend(ascii_tokens)
+        for match in KEYWORD_TOKEN_PATTERN.finditer(text):
+            block = match.group(0)
+            if HAN_TOKEN_PATTERN.fullmatch(block):
+                tokens.extend(term for term in jieba.cut(block) if term.strip())
+            else:
+                tokens.append(block.lower())
 
         return tokens

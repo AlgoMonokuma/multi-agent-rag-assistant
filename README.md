@@ -8,13 +8,14 @@ The project is currently focused on the RAG runtime foundation. Agent orchestrat
 
 - PDF and Markdown parsing with source metadata.
 - Session-isolated in-memory FAISS indexes.
-- Text chunking and sentence-transformer embeddings.
-- Hybrid retrieval using vector search and keyword scoring.
+- Text chunking and multilingual sentence-transformer embeddings.
+- Hybrid retrieval using vector search and CJK-aware keyword scoring.
 - Document-type chunking profiles for semantic, precise, and code-heavy content.
 - Cross-encoder re-ranking for improving final retrieval order.
 - Runtime guardrails for ingestion failure handling, citation metadata, retrieval boundaries, and re-ranking failures.
 - English developer-facing comments, logs, exceptions, and tests for cleaner public review.
 - LangGraph agent workflow foundation with researcher, reporter, and reviewer stub nodes.
+- Multilingual retrieval foundation using `paraphrase-multilingual-MiniLM-L12-v2` and CJK-aware keyword tokenization.
 - Unit tests for parser, chunker, embeddings, indexing, retrieval, re-ranking, and runtime hardening behavior.
 
 ## Tech Stack
@@ -29,7 +30,7 @@ The project is currently focused on the RAG runtime foundation. Agent orchestrat
 | Re-ranking | cross-encoder/ms-marco-MiniLM-L-6-v2 |
 | Testing | pytest |
 | Dependency management | uv |
-| Planned orchestration | LangGraph |
+| Orchestration foundation | LangGraph |
 | Planned deployment | Docker, GitHub Actions, Hugging Face Spaces |
 
 ## Project Structure
@@ -103,6 +104,6 @@ uv run streamlit run app/main.py
 
 ## Development Status
 
-The repository has completed the main Epic 2 RAG runtime stories, runtime hardening, codebase language normalization, and Story 3.1 LangGraph workflow foundation. The next planned direction is Epic 3: agent workflow prototyping.
+The repository has completed the main Epic 2 RAG runtime stories, runtime hardening, codebase language normalization, Story 3.1 LangGraph workflow foundation, and Story 3.1.1 multilingual retrieval foundation. The next planned direction is the remaining Epic 3 answer-generation and agent-integration work.
 
 See [docs/roadmap.md](docs/roadmap.md) for the versioning plan.

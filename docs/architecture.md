@@ -90,11 +90,13 @@ Hybrid retrieval combines two signals:
 
 ### CJK Tokenization
 
-The current `_tokenize` implementation splits CJK text character-by-character, which significantly degrades BM25 keyword scoring for Chinese, Japanese, and Korean content. The planned fix is to use `jieba` for Chinese word segmentation and preserve the ASCII token path for Latin-script languages:
+The current `_tokenize` implementation is CJK-aware. It uses `jieba` for Han character blocks, lowercases ASCII tokens, and preserves Japanese kana and Korean Hangul blocks for keyword matching:
 
 ```
-Current:  "人工智慧" → ['人', '工', '智', '慧']   # each character, BM25 score distorted
-Planned:  "人工智慧" → ['人工智慧']               # correct word boundary, accurate IDF
+Han:      "人工智慧" -> jieba word segmentation
+ASCII:    "Hello AI" -> ["hello", "ai"]
+Kana:     "AIテスト" -> ["ai", "テスト"]
+Hangul:   "한국어 테스트" -> ["한국어", "테스트"]
 ```
 
 The document-type profile can tune `vector_weight` and `keyword_weight`:
@@ -139,8 +141,6 @@ The system employs heterogeneous validation across two levels to ensure robustne
 ## Known Technical Debt
 
 - API and UI are currently bootstrap-level and do not yet expose the full RAG workflow.
-- Embedding model migration from `all-MiniLM-L6-v2` to `paraphrase-multilingual-MiniLM-L12-v2` is planned as Story 3.1.x.
-- CJK-aware tokenization using jieba is planned as part of Story 3.1.x.
 - FAISS write serialization (asyncio.Lock) is planned before any concurrent API endpoint exposes ingestion.
 - Session persistence (disk-backed index) is planned for Epic 5.
 - File upload validation (magic-byte check) is planned for Epic 4 API layer.

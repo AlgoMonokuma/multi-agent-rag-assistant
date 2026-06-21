@@ -73,8 +73,8 @@ All other file types must be rejected before any parsing is attempted. Validatio
 | --- | --- | --- |
 | FR1 | Parse PDF and Markdown files while preserving metadata. | Complete |
 | FR2 | Create session-isolated FAISS indexes. | Complete |
-| FR3 | Convert parsed documents into chunks and embeddings using a multilingual model. | Complete (model migration planned) |
-| FR4 | Retrieve relevant chunks using hybrid vector and keyword search with CJK-aware tokenization. | Complete (CJK tokenizer planned) |
+| FR3 | Convert parsed documents into chunks and embeddings using a multilingual model. | Complete |
+| FR4 | Retrieve relevant chunks using hybrid vector and keyword search with CJK-aware tokenization. | Complete |
 | FR5 | Support document-type profiles for semantic, precise, and code content. | Complete |
 | FR6 | Re-rank retrieved chunks with a cross-encoder. | Complete |
 | FR7 | Add runtime hardening around metadata, partial updates, and parameter boundaries. | Complete |

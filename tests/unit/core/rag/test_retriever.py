@@ -638,15 +638,32 @@ class TestTokenization:
     def test_tokenize_preserves_ascii_and_segments_cjk_blocks(self) -> None:
         """Verify CJK text is segmented correctly while ASCII remains whole."""
         tokens = HybridRetriever._tokenize("Hello world 人工智慧 AI測試")
-        
+
         # ASCII should remain intact and lowercase
         assert "hello" in tokens
         assert "world" in tokens
         assert "ai" in tokens
-        
+
         # CJK text should be segmented; specific jieba output depends on dict,
-        # but at minimum we expect standard words or the fallback chunks 
+        # but at minimum we expect standard words or the fallback chunks
         # (Since "人工智慧" and "測試" are standard dictionary words, they should not be torn to single chars)
         # Using a reliable test string like "測試" testing boundaries
         test_tokens = HybridRetriever._tokenize("測試")
         assert "測試" in test_tokens
+
+    def test_tokenize_preserves_japanese_kana_blocks(self) -> None:
+        """Verify Japanese kana terms are available for keyword matching."""
+        tokens = HybridRetriever._tokenize("AIテスト かな カタカナ")
+
+        assert "ai" in tokens
+        assert "テスト" in tokens
+        assert "かな" in tokens
+        assert "カタカナ" in tokens
+
+    def test_tokenize_preserves_korean_hangul_blocks(self) -> None:
+        """Verify Korean Hangul terms are available for keyword matching."""
+        tokens = HybridRetriever._tokenize("Python 한국어 테스트")
+
+        assert "python" in tokens
+        assert "한국어" in tokens
+        assert "테스트" in tokens

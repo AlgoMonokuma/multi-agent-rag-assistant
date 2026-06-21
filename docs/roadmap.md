@@ -23,7 +23,7 @@ Planned direction:
 
 - **Story 3.1**: LangGraph state graph foundation is complete. The graph defines researcher, reporter, and reviewer stub nodes with conditional retry routing and a max-iteration safety ceiling.
 
-- **Story 3.1.1**: Migrate embedding model to `paraphrase-multilingual-MiniLM-L12-v2` and add jieba-based CJK word segmentation to the BM25 tokenizer. Prerequisite for accurate non-English retrieval.
+- **Story 3.1.1**: Multilingual embedding model migration and CJK-aware BM25 tokenization are complete. The default embedder uses `paraphrase-multilingual-MiniLM-L12-v2`, and keyword retrieval uses `jieba` for Han text.
 - **Story 3.1.2**: Add plain-text (`.txt`) parser so users can upload plain documents in addition to PDF and Markdown.
 - **Story 3.2**: LLM answer generation using Groq API — prompt assembly, context budget management, citation mapping, and graceful API failure handling. This is the first Story that produces a usable end-to-end answer.
 - Observability and tracing setup (LangSmith or Arize Phoenix) at the start of agent development.
@@ -76,13 +76,14 @@ Planned direction:
 | [2.5.1](stories/2-5-1-rag-runtime-hardening.md) | Runtime hardening and harness guardrails | Complete |
 | [2.5.2](stories/2-5-2-codebase-language-normalization.md) | Engineering task: codebase language normalization | Complete |
 | [3.1](stories/3-1-langgraph-state-graph-foundation.md) | LangGraph state graph foundation | Complete |
+| [3.1.1](stories/3-1-1-multilingual-embedding-and-cjk-tokenization.md) | Multilingual embedding and CJK tokenization | Complete |
 
 ## Known Scope Gaps & Backlog
 
 - [ ] [Issue #1](https://github.com/AlgoMonokuma/multi-agent-rag-assistant/issues/1): PDF image and table support (scope gap identified after Story 2.1, targeting v0.3.0 or later)
 - [x] LangGraph state graph foundation with stub researcher/reporter/reviewer nodes (Story 3.1)
-- [ ] Embedding model migration: `all-MiniLM-L6-v2` → `paraphrase-multilingual-MiniLM-L12-v2` (Story 3.1.1)
-- [ ] CJK-aware BM25 tokenization using jieba (Story 3.1.1)
+- [x] Embedding model migration: `all-MiniLM-L6-v2` → `paraphrase-multilingual-MiniLM-L12-v2` (Story 3.1.1)
+- [x] CJK-aware BM25 tokenization using jieba (Story 3.1.1)
 - [ ] LLM answer generation end-to-end (Story 3.2 — currently 0% implemented despite Groq key being configured)
 - [ ] File upload API with security validation — magic-byte check, size limit, batch limit, temp-file cleanup (Story 4.2)
 - [ ] FAISS write serialization — asyncio.Lock to prevent race condition under concurrent ingestion (Story 4.2)
