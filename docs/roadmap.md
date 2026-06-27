@@ -8,30 +8,29 @@
 | `v0.2.0` | RAG runtime foundation | Parser, indexing, chunking, hybrid retrieval, profiles, and re-ranking are documented and tested. |
 | `v0.2.1` | RAG runtime hardening | Story 2.5.1 guardrails are complete and tests pass. |
 | `v0.2.2` | Codebase language normalization | Engineering Task 2.5.2 is complete; all comments, docstrings, and tests use consistent English. |
-| `v0.3.0` | Agent workflow prototype + multilingual foundation | Stories 3.1, 3.1.1 (multilingual model + CJK tokenizer), 3.1.2 (TXT parser), and 3.2 (LLM answer generation) are usable. |
-| `v0.4.0` | Streaming user experience + file upload API | Stories 4.1–4.5 (Streamlit UI, upload endpoint with validation, SSE, citation rendering) are usable. |
-| `v0.5.0` | Deployable demo with session persistence | Docker, CI, session persistence (Story 5.1), and hosting path are ready. |
+| `v0.3.0` | Complete RAG Agent prototype | Stories 3.1 (LangGraph foundation), 3.1.1 (multilingual + CJK), 3.1.2 (TXT parser), 3.2 (LLM generation), and 3.3 (Researcher Agent) are complete. The system can complete a full retrieval → research → answer loop end-to-end. |
+| `v0.4.0` | Advanced workflow + streaming UI | Story 3.5 (Reviewer quality gate), Stories 4.1–4.4 (Streamlit UI, SSE streaming, citation rendering) are usable. |
+| `v0.5.0` | External search + deployable demo | Story 3.4 (MCP web search), Docker, CI, session persistence (Story 5.1), and hosting path are ready. |
 | `v1.0.0` | Interview demo release | End-to-end demo is stable, documented, and easy to run. |
 
 ## Future Epic Direction
 
 ### Epic 3: Agent Workflow Prototype
 
-Goal: Build the first multi-agent reasoning workflow on top of the hardened RAG runtime using LangGraph. Also resolves foundational multilingual gaps and delivers the first end-to-end answer generation capability.
+Goal: Build a complete multi-agent reasoning workflow on top of the hardened RAG runtime using LangGraph. Resolves foundational multilingual gaps and delivers a full retrieval → research → answer loop.
 
-Planned direction:
+**v0.3.0 scope (complete RAG Agent loop):**
 
-- **Story 3.1**: LangGraph state graph foundation is complete. The graph defines researcher, reporter, and reviewer stub nodes with conditional retry routing and a max-iteration safety ceiling.
+- **Story 3.1** ✅: LangGraph state graph foundation — graph defines researcher, reporter, and reviewer stub nodes with conditional retry routing and a max-iteration safety ceiling.
+- **Story 3.1.1** ✅: Multilingual embedding model migration and CJK-aware BM25 tokenization. Default embedder uses `paraphrase-multilingual-MiniLM-L12-v2`; keyword retrieval uses `jieba` for Han text.
+- **Story 3.1.2**: Plain-text (`.txt`) parser — allows users to upload plain documents in addition to PDF and Markdown.
+- **Story 3.2** ✅: LLM answer generation using Groq API — prompt assembly, context budget management, citation mapping, and graceful API failure handling.
+- **Story 3.3**: Researcher Agent — queries the RAG retriever, identifies information gaps, and passes grounded context to the reporter node. This completes the first real end-to-end agent loop.
 
-- **Story 3.1.1**: Multilingual embedding model migration and CJK-aware BM25 tokenization are complete. The default embedder uses `paraphrase-multilingual-MiniLM-L12-v2`, and keyword retrieval uses `jieba` for Han text.
-- **Story 3.1.2**: Add plain-text (`.txt`) parser so users can upload plain documents in addition to PDF and Markdown.
-- **Story 3.2**: LLM answer generation using Groq API — prompt assembly, context budget management, citation mapping, and graceful API failure handling. This is the first Story that produces a usable end-to-end answer.
-- Observability and tracing setup (LangSmith or Arize Phoenix) at the start of agent development.
-- Researcher agent that can query retrieved context and identify information gaps.
-- Reporter agent that can produce grounded answers with explicit citation mapping.
-- Web search tool integration through MCP when local context is insufficient.
-- Error recovery and state rollback for multi-agent workflow failures.
-- Quality gate agent for answer validation against user intent.
+**Post v0.3.0 (planned for v0.4.0 / v0.5.0):**
+
+- **Story 3.4**: MCP web search tool integration — when local context is insufficient, the researcher can invoke an external search tool.
+- **Story 3.5**: Reviewer quality gate — a dedicated agent validates the reporter's answer against user intent before final output.
 
 ### Epic 4: Streaming User Experience
 
