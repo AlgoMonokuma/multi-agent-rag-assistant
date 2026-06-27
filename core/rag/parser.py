@@ -72,6 +72,12 @@ class PdfParser(BaseParser):
             logger.error("PDF parsing failed: %s", error)
             raise ParserException(f"PDF parsing failed: {error}") from error
 
+        if not documents:
+            logger.error("PDF parsing produced no extractable text: %s", file_path)
+            raise ParserException(
+                f"PDF parsing produced no extractable text: {file_path}"
+            )
+
         logger.info("PDF parsing completed with %s text pages.", len(documents))
         return documents
 
