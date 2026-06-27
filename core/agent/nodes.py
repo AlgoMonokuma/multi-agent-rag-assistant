@@ -1,12 +1,13 @@
-"""Stub node functions for the LangGraph agent workflow.
+"""Node functions for the LangGraph agent workflow.
 
 Each node accepts an AgentState dict and returns a partial state update.
-These are stubs that will be replaced with real implementations in later stories:
-  - researcher_node -> Story 3.3 (HybridRetriever integration)
-  - reporter_node   -> Story 3.2 (LLMGenerator / Groq integration)
-  - reviewer_node   -> Story 3.6 (Reviewer LLM and quality gate)
 
-Rules followed by all stub nodes:
+Current implementation status:
+  - researcher_node -> stub (HybridRetriever integration deferred to Story 3.3)
+  - reporter_node   -> real (LLMGenerator / Groq — implemented in Story 3.2)
+  - reviewer_node   -> stub (Reviewer LLM / quality gate deferred to Story 3.6)
+
+Rules followed by all nodes:
   1. Accept state: AgentState, return dict of state updates.
   2. Use the shared logger from core.log (not print or logging directly).
   3. Do not raise exceptions for valid state input.
@@ -43,21 +44,41 @@ def researcher_node(state: AgentState) -> dict:
 
 
 def reporter_node(state: AgentState) -> dict:
-    """Generate a draft answer from retrieved chunks.
+    """Generate a draft answer from retrieved chunks using LLMGenerator.
 
-    Stub: will call LLMGenerator (Groq) in Story 3.2.
+    Calls LLMGenerator (Groq) to produce a grounded answer from the
+    retrieved and re-ranked chunks stored in state.
 
     Args:
-        state: Current workflow state containing retrieved_chunks.
+        state: Current workflow state containing retrieved_chunks, query,
+               and session_id.
 
     Returns:
-        Partial state update with draft_answer and citations.
+        Partial state update with draft_answer (str) and citations (list[dict]).
+        Citations are stored as plain dicts for JSON-compatibility with
+        downstream nodes.
     """
-    chunk_count = len(state.get("retrieved_chunks") or [])
-    logger.debug("reporter_node: incoming chunk count=%d", chunk_count)
+    from core.rag.generator import GeneratorException, LLMGenerator  # lazy import
+
+    query = state.get("query", "")
+    chunks = state.get("retrieved_chunks") or []
+    session_id = state.get("session_id", "")
+
+    logger.debug("reporter_node: chunk_count=%d session_id=%r", len(chunks), session_id)
+
+    generator = LLMGenerator()
+    try:
+        result = generator.generate(query=query, chunks=chunks, session_id=session_id)
+    except GeneratorException as exc:
+        logger.error("reporter_node: generation failed: %s", exc)
+        return {
+            "draft_answer": f"[error] Answer generation failed: {exc}",
+            "citations": [],
+        }
+
     return {
-        "draft_answer": "[stub] No answer generated yet.",
-        "citations": [],
+        "draft_answer": result.answer,
+        "citations": [{"source": c.source, "chunk_id": c.chunk_id} for c in result.citations],
     }
 
 
