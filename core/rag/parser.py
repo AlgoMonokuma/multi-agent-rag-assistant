@@ -108,3 +108,57 @@ class MarkdownParser(BaseParser):
 
         logger.info("Markdown parsing completed.")
         return [document]
+
+
+class TextFileParser(BaseParser):
+    """Parse plain text files with security and stability guards."""
+
+    # Limit to 20MB to prevent memory issues. 20MB of text is roughly 10 million characters.
+    MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024
+
+    def parse(self, file_path: str) -> List[ParsedDocument]:
+        """Parse a .txt file with safety checks and precise error reporting."""
+        logger.info("Starting text file parse: %s", file_path)
+
+        try:
+            # 1. Size check before reading (to prevent OOM)
+            file_size = os.path.getsize(file_path)
+            if file_size > self.MAX_FILE_SIZE_BYTES:
+                logger.error("Text file too large: %s (%d bytes)", file_path, file_size)
+                raise ParserException(
+                    f"File too large: {os.path.basename(file_path)}. "
+                    f"Limit is {self.MAX_FILE_SIZE_BYTES / 1024 / 1024}MB."
+                )
+
+            # 2. Direct open (Avoids TOCTOU race condition)
+            with open(file_path, "r", encoding="utf-8") as file:
+                content = file.read()
+
+                # 3. Handle empty files consistently with PdfParser (AC consistency)
+                if not content.strip():
+                    logger.warning("Text file is empty or only whitespace: %s", file_path)
+                    return []
+
+                source_name = os.path.basename(file_path)
+                document = ParsedDocument(
+                    page_content=content,
+                    metadata={"source": source_name},
+                )
+                logger.info("Text file parsing completed.")
+                return [document]
+
+        except FileNotFoundError:
+            logger.error("Text file not found: %s", file_path)
+            raise ParserException(f"File not found: {file_path}")
+        except PermissionError:
+            logger.error("Permission denied for text file: %s", file_path)
+            raise ParserException(f"Permission denied: {file_path}")
+        except UnicodeDecodeError as error:
+            logger.error("Text file decoding failed (expected UTF-8): %s", error)
+            raise ParserException(
+                f"Text file decoding failed for {file_path}. Only UTF-8 is supported."
+            ) from error
+        except Exception as error:
+            # Catching generic exceptions just in case of unexpected OS errors
+            logger.error("Unexpected text file parsing failure: %s", error)
+            raise ParserException(f"Text file parsing failed: {error}") from error
