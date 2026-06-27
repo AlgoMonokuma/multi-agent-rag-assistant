@@ -26,6 +26,44 @@ Never commit `.env`, credentials, local-only tool output, or generated temporary
 4. Use clear conventional commit messages, such as `feat(rag): add hybrid retriever`.
 5. Keep public documentation aligned when behavior, setup, or project scope changes.
 
+## Branch and Commit Conventions
+
+Use short-lived branches for focused work. Prefer names that describe the change type and scope:
+
+- `feature/<story-or-feature-name>`
+- `fix/<bug-or-component-name>`
+- `docs/<documentation-topic>`
+
+Use conventional commit messages for commits and merge titles:
+
+- `feat(<scope>): implement <feature-or-story>`
+- `fix(<scope>): handle <bug-or-failure-case>`
+- `docs: update <documentation-topic>`
+- `test(<scope>): cover <behavior-or-failure-path>`
+- `build: add <dependency-or-build-change>`
+
+Keep commit messages concise and outcome-focused. Use the commit body only when the change needs extra context, verification notes, or migration details.
+
+## Pull Request Format
+
+Use this structure for branch and pull request descriptions:
+
+### Background
+
+Explain why the branch exists and which story, bug, or project need it addresses.
+
+### Changes Made
+
+Summarize the main implementation, test, documentation, or dependency changes.
+
+### Verification
+
+List the test commands or checks run, plus the result when available.
+
+### Resolves
+
+List the issue, story, acceptance criteria, or review findings resolved by the branch.
+
 ## Testing
 
 Run the full test suite:
