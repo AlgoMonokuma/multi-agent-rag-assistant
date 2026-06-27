@@ -7,7 +7,13 @@ from unittest.mock import mock_open
 
 import pytest
 
-from core.rag.parser import MarkdownParser, ParsedDocument, ParserException, PdfParser
+from core.rag.parser import (
+    MarkdownParser,
+    ParsedDocument,
+    ParserException,
+    PdfParser,
+    TextFileParser,
+)
 
 
 @pytest.fixture
@@ -84,3 +90,49 @@ def test_pdf_parser_file_not_found() -> None:
 
     with pytest.raises(ParserException, match="File not found"):
         parser.parse("non_existent_file.pdf")
+
+
+def test_text_parser_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test behavior."""
+    parser = TextFileParser()
+    file_path = "test_doc.txt"
+    text_content = "This is plain text content."
+
+    monkeypatch.setattr(os.path, "exists", lambda path: path == file_path)
+    monkeypatch.setattr(
+        "builtins.open",
+        mock_open(read_data=text_content),
+    )
+
+    documents = parser.parse(file_path)
+
+    assert len(documents) == 1
+    document = documents[0]
+    assert isinstance(document, ParsedDocument)
+    assert document.metadata["source"] == "test_doc.txt"
+    assert "This is plain text content" in document.page_content
+
+
+def test_text_parser_encoding_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test behavior."""
+    parser = TextFileParser()
+    file_path = "binary.txt"
+
+    monkeypatch.setattr(os.path, "exists", lambda path: path == file_path)
+
+    # Mock open to raise UnicodeDecodeError
+    def mock_open_encoding_error(*args, **kwargs):
+        raise UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid start byte")
+
+    monkeypatch.setattr("builtins.open", mock_open_encoding_error)
+
+    with pytest.raises(ParserException, match="Only UTF-8 is supported"):
+        parser.parse(file_path)
+
+
+def test_text_parser_file_not_found() -> None:
+    """Test behavior."""
+    parser = TextFileParser()
+
+    with pytest.raises(ParserException, match="File not found"):
+        parser.parse("non_existent_file.txt")

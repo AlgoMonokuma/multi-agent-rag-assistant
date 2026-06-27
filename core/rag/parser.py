@@ -108,3 +108,36 @@ class MarkdownParser(BaseParser):
 
         logger.info("Markdown parsing completed.")
         return [document]
+
+
+class TextFileParser(BaseParser):
+    """Parse plain text files."""
+
+    def parse(self, file_path: str) -> List[ParsedDocument]:
+        """Parse a .txt file while preserving full text."""
+        if not os.path.exists(file_path):
+            logger.error("Text file not found: %s", file_path)
+            raise ParserException(f"File not found: {file_path}")
+
+        logger.info("Starting text file parse: %s", file_path)
+
+        try:
+            with open(file_path, "r", encoding="utf-8") as file:
+                content = file.read()
+                source_name = os.path.basename(file_path)
+
+                document = ParsedDocument(
+                    page_content=content,
+                    metadata={"source": source_name},
+                )
+        except UnicodeDecodeError as error:
+            logger.error("Text file decoding failed (expected UTF-8): %s", error)
+            raise ParserException(
+                f"Text file decoding failed for {file_path}. Only UTF-8 is supported."
+            ) from error
+        except Exception as error:
+            logger.error("Text file parsing failed: %s", error)
+            raise ParserException(f"Text file parsing failed: {error}") from error
+
+        logger.info("Text file parsing completed.")
+        return [document]
