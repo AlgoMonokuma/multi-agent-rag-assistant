@@ -44,7 +44,7 @@ LLM Answer Generator -> grounded answer with citations
 | Pipeline | `core/rag/pipeline.py` | Orchestrate chunking, embedding, indexing, and profile weight updates. |
 | Retriever | `core/rag/retriever.py` | Merge vector and keyword retrieval results using CJK-aware tokenization. |
 | Reranker | `core/rag/reranker.py` | Re-rank candidate chunks with a cross-encoder model. |
-| LLM Generator | `core/rag/generator.py` (planned) | Call the configured LLM with retrieved context and return a grounded answer. |
+| LLM Generator | `core/rag/generator.py` | Call the configured LLM with retrieved context and return a grounded answer with citations. |
 | API | `api/main.py` | Provide the FastAPI application boundary. |
 | UI | `app/main.py` | Provide the Streamlit application boundary. |
 
@@ -119,6 +119,12 @@ cross-encoder/ms-marco-MiniLM-L-6-v2
 
 The re-ranker supports dependency injection for tests and lazy loading for runtime efficiency.
 
+## Answer Generation
+
+`LLMGenerator` turns retrieved and re-ranked chunks into grounded answers through the configured Groq client. Prompt assembly includes source and chunk ID metadata for admitted chunks, applies a context token budget, and returns citation references only for chunks included in the prompt.
+
+When no usable context is available, the generator returns a graceful fallback answer without calling the LLM. API, configuration, import, and malformed response failures are normalized through `GeneratorException`.
+
 ## Testing Strategy
 
 The current unit suite focuses on:
@@ -130,6 +136,7 @@ The current unit suite focuses on:
 - Hybrid search scoring and deterministic ordering.
 - Document-type profile behavior.
 - Re-ranking behavior and fallback paths.
+- LLM answer generation, prompt budgeting, citation mapping, and failure handling.
 
 ## Evaluation Strategy (Heterogeneous Validation)
 
@@ -144,5 +151,5 @@ The system employs heterogeneous validation across two levels to ensure robustne
 - FAISS write serialization (asyncio.Lock) is planned before any concurrent API endpoint exposes ingestion.
 - Session persistence (disk-backed index) is planned for Epic 5.
 - File upload validation (magic-byte check) is planned for Epic 4 API layer.
-- LLM answer generation from retrieved context is planned for Story 3.2.
+- Researcher-node retrieval integration is still planned after the generator foundation.
 - Heterogeneous Evaluation Framework (Story 5.5) is required to quantitatively measure RAG quality.

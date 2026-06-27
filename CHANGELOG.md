@@ -17,6 +17,9 @@ The project uses semantic versioning while it is pre-1.0:
 - Story 3.1.1 multilingual retrieval foundation: default embeddings now use
   `paraphrase-multilingual-MiniLM-L12-v2`, and keyword retrieval uses
   CJK-aware tokenization with `jieba` for Han text.
+- Story 3.2 LLM answer generation with Groq-backed grounded answers,
+  citation-aware prompt assembly, token-budget handling, and generator failure
+  fallbacks.
 
 ### Changed
 - Keyword tokenization now preserves ASCII, Japanese kana, and Korean Hangul
