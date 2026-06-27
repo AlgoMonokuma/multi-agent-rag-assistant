@@ -16,6 +16,7 @@ The project is currently focused on the RAG runtime foundation. Agent orchestrat
 - English developer-facing comments, logs, exceptions, and tests for cleaner public review.
 - LangGraph agent workflow foundation with researcher, reporter, and reviewer stub nodes.
 - Multilingual retrieval foundation using `paraphrase-multilingual-MiniLM-L12-v2` and CJK-aware keyword tokenization.
+- Groq-backed answer generation with citation-aware prompt assembly and graceful fallback handling.
 - Unit tests for parser, chunker, embeddings, indexing, retrieval, re-ranking, and runtime hardening behavior.
 
 ## Tech Stack
@@ -51,6 +52,7 @@ core/
     pipeline.py           Ingestion pipeline
     retriever.py          Hybrid vector and keyword retrieval
     reranker.py           Cross-encoder re-ranking
+    generator.py          Groq-backed answer generation with citations
 tests/
   unit/                   Core unit tests
   integration/            API integration tests
@@ -104,6 +106,6 @@ uv run streamlit run app/main.py
 
 ## Development Status
 
-The repository has completed the main Epic 2 RAG runtime stories, runtime hardening, codebase language normalization, Story 3.1 LangGraph workflow foundation, and Story 3.1.1 multilingual retrieval foundation. The next planned direction is the remaining Epic 3 answer-generation and agent-integration work.
+The repository has completed the main Epic 2 RAG runtime stories, runtime hardening, codebase language normalization, Story 3.1 LangGraph workflow foundation, Story 3.1.1 multilingual retrieval foundation, and Story 3.2 LLM answer generation. The next planned direction is the remaining Epic 3 parser and agent-integration work.
 
 See [docs/roadmap.md](docs/roadmap.md) for the versioning plan.

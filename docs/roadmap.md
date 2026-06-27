@@ -77,6 +77,7 @@ Planned direction:
 | [2.5.2](stories/2-5-2-codebase-language-normalization.md) | Engineering task: codebase language normalization | Complete |
 | [3.1](stories/3-1-langgraph-state-graph-foundation.md) | LangGraph state graph foundation | Complete |
 | [3.1.1](stories/3-1-1-multilingual-embedding-and-cjk-tokenization.md) | Multilingual embedding and CJK tokenization | Complete |
+| [3.2](stories/3-2-llm-answer-generation.md) | LLM answer generation | Complete |
 
 ## Known Scope Gaps & Backlog
 
@@ -84,7 +85,7 @@ Planned direction:
 - [x] LangGraph state graph foundation with stub researcher/reporter/reviewer nodes (Story 3.1)
 - [x] Embedding model migration: `all-MiniLM-L6-v2` → `paraphrase-multilingual-MiniLM-L12-v2` (Story 3.1.1)
 - [x] CJK-aware BM25 tokenization using jieba (Story 3.1.1)
-- [ ] LLM answer generation end-to-end (Story 3.2 — currently 0% implemented despite Groq key being configured)
+- [x] LLM answer generation end-to-end with Groq-backed grounded answers and citation mapping (Story 3.2)
 - [ ] File upload API with security validation — magic-byte check, size limit, batch limit, temp-file cleanup (Story 4.2)
 - [ ] FAISS write serialization — asyncio.Lock to prevent race condition under concurrent ingestion (Story 4.2)
 - [ ] Session persistence — disk-backed index + browser localStorage session ID (Story 5.1)

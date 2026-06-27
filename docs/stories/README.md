@@ -18,3 +18,4 @@ These are public story and near-term engineering task specifications derived fro
 | [2.5.2](2-5-2-codebase-language-normalization.md) | Engineering task: codebase language normalization | Complete |
 | [3.1](3-1-langgraph-state-graph-foundation.md) | LangGraph state graph foundation | Complete |
 | [3.1.1](3-1-1-multilingual-embedding-and-cjk-tokenization.md) | Multilingual embedding and CJK tokenization | Complete |
+| [3.2](3-2-llm-answer-generation.md) | LLM answer generation | Complete |
