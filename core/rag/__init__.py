@@ -15,7 +15,12 @@ from core.rag.embeddings import (
     EmbeddingException,
     SentenceTransformerEmbedder,
 )
-from core.rag.indexer import IndexerException, SessionIndexRecord, SessionIndexer
+from core.rag.indexer import (
+    IndexerException,
+    SessionIndexRecord,
+    SessionIndexer,
+    get_default_session_indexer,
+)
 from core.rag.pipeline import IngestionResult, ingest_documents
 from core.rag.reranker import CrossEncoderReranker, RerankerException
 from core.rag.retriever import (
@@ -46,6 +51,7 @@ __all__ = [
     "SentenceTransformerEmbedder",
     "SessionIndexRecord",
     "SessionIndexer",
+    "get_default_session_indexer",
     "TextChunker",
     "ingest_documents",
 ]

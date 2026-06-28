@@ -3,7 +3,7 @@
 Each node accepts an AgentState dict and returns a partial state update.
 
 Current implementation status:
-  - researcher_node -> stub (HybridRetriever integration deferred to Story 3.3)
+  - researcher_node -> real (HybridRetriever — implemented in Story 3.3)
   - reporter_node   -> real (LLMGenerator / Groq — implemented in Story 3.2)
   - reviewer_node   -> stub (Reviewer LLM / quality gate deferred to Story 3.6)
 
@@ -19,28 +19,95 @@ from core.log import get_logger
 
 logger = get_logger(__name__)
 
+# Module-level sentinel for lazy default retriever construction.
+# Never call _get_default_retriever() at import time — it loads sentence-transformers
+# and faiss eagerly which slows all tests and breaks the lazy-load guarantee.
+_default_retriever = None
 
-def researcher_node(state: AgentState) -> dict:
+
+def _get_default_retriever():
+    """Return the module-level default retriever, constructing it lazily on first call.
+
+    Uses a module-level sentinel so the heavy dependency stack (sentence-transformers,
+    faiss, cross-encoder) is only initialised once per process lifetime.
+
+    Returns:
+        HybridRetriever configured with SentenceTransformerEmbedder,
+        SessionIndexer, and CrossEncoderReranker (final_top_n=5).
+    """
+    global _default_retriever
+    if _default_retriever is None:
+        from core.rag.embeddings import SentenceTransformerEmbedder  # noqa: PLC0415
+        from core.rag.indexer import get_default_session_indexer  # noqa: PLC0415
+        from core.rag.reranker import CrossEncoderReranker  # noqa: PLC0415
+        from core.rag.retriever import HybridRetriever  # noqa: PLC0415
+
+        embedder = SentenceTransformerEmbedder()
+        indexer = get_default_session_indexer()
+        reranker = CrossEncoderReranker()
+        _default_retriever = HybridRetriever(
+            session_indexer=indexer,
+            embedder=embedder,
+            reranker=reranker,
+            final_top_n=5,
+        )
+    return _default_retriever
+
+
+def researcher_node(state: AgentState, *, _retriever=None) -> dict:
     """Retrieve relevant chunks for the user query.
 
-    Stub: will call HybridRetriever with session_id in Story 3.3.
+    Calls HybridRetriever (with CrossEncoderReranker wired inside) using
+    session_id and query extracted from state.  Fails open — returns
+    retrieved_chunks=[] — on RetrieverException or RerankerException so
+    the graph continues to the reporter node.
+
+    Note on re-ranking: CrossEncoderReranker is injected into HybridRetriever
+    at construction time (via _get_default_retriever). The retriever calls
+    reranker.rerank() internally during search(); there is no separate
+    reranker call in this node.
 
     Args:
         state: Current workflow state containing query and session_id.
+        _retriever: Optional pre-built HybridRetriever for test injection.
+                    When None, the default retrieval stack is constructed
+                    lazily via _get_default_retriever().
+                    LangGraph only passes state as a positional arg, so
+                    keyword-only injection is safe for production use.
 
     Returns:
-        Partial state update with retrieved_chunks (empty stub list)
-        and an iteration_count increment of 1.
+        Partial state update with retrieved_chunks (list[RetrievedChunk])
+        and an iteration_count increment of 1. iteration_count is always
+        returned as 1 to drive the operator.add reducer correctly.
     """
+    from core.rag.reranker import RerankerException  # noqa: PLC0415
+    from core.rag.retriever import RetrieverException  # noqa: PLC0415
+
+    query = state.get("query", "")
+    session_id = state.get("session_id", "")
+
     logger.debug(
         "researcher_node: query=%r session_id=%r",
-        state.get("query"),
-        state.get("session_id"),
+        query,
+        session_id,
     )
-    return {
-        "retrieved_chunks": [],
-        "iteration_count": 1,  # Triggers operator.add reducer: total += 1
-    }
+
+    retriever = _retriever or _get_default_retriever()
+
+    try:
+        search_result = retriever.search(session_id=session_id, query=query, top_k=10)
+        chunks = search_result.results
+    except (RetrieverException, RerankerException) as exc:
+        logger.error("researcher_node: retrieval failed: %s", exc)
+        return {"retrieved_chunks": [], "iteration_count": 1}
+
+    logger.debug(
+        "researcher_node: retrieved %d chunks for session %r",
+        len(chunks),
+        session_id,
+    )
+
+    return {"retrieved_chunks": list(chunks), "iteration_count": 1}
 
 
 def reporter_node(state: AgentState) -> dict:
