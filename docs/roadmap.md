@@ -23,9 +23,9 @@ Goal: Build a complete multi-agent reasoning workflow on top of the hardened RAG
 
 - **Story 3.1** ✅: LangGraph state graph foundation — graph defines researcher, reporter, and reviewer stub nodes with conditional retry routing and a max-iteration safety ceiling.
 - **Story 3.1.1** ✅: Multilingual embedding model migration and CJK-aware BM25 tokenization. Default embedder uses `paraphrase-multilingual-MiniLM-L12-v2`; keyword retrieval uses `jieba` for Han text.
-- **Story 3.1.2**: Plain-text (`.txt`) parser — allows users to upload plain documents in addition to PDF and Markdown.
+- **Story 3.1.2** ✅: Plain-text (`.txt`) parser — allows users to upload plain documents in addition to PDF and Markdown.
 - **Story 3.2** ✅: LLM answer generation using Groq API — prompt assembly, context budget management, citation mapping, and graceful API failure handling.
-- **Story 3.3**: Researcher Agent — queries the RAG retriever, identifies information gaps, and passes grounded context to the reporter node. This completes the first real end-to-end agent loop.
+- **Story 3.3** ✅: Researcher Agent — queries the RAG retriever, identifies information gaps, and passes grounded context to the reporter node. This completes the first real end-to-end agent loop.
 
 **Post v0.3.0 (planned for v0.4.0 / v0.5.0):**
 
@@ -78,6 +78,7 @@ Planned direction:
 | [3.1.1](stories/3-1-1-multilingual-embedding-and-cjk-tokenization.md) | Multilingual embedding and CJK tokenization | Complete |
 | [3.1.2](stories/3-1-2-plain-text-parser-support.md) | Plain-text parser support | Complete |
 | [3.2](stories/3-2-llm-answer-generation.md) | LLM answer generation | Complete |
+| [3.3](_bmad-output/implementation-artifacts/3-3-agent-researcher-implementation.md) | Agent Researcher Implementation | Complete |
 
 ## Known Scope Gaps & Backlog
 
