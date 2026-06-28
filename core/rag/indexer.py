@@ -270,3 +270,18 @@ class SessionIndexer:
             raise IndexerException("faiss is not installed; install faiss-cpu first.") from error
 
         return faiss.IndexFlatL2(384)
+
+
+_default_session_indexer: SessionIndexer | None = None
+
+
+def get_default_session_indexer() -> SessionIndexer:
+    """Return the shared session indexer used by the default runtime path.
+
+    The agent workflow and any future ingestion entry points should use this
+    singleton so they operate on the same in-memory session registry.
+    """
+    global _default_session_indexer
+    if _default_session_indexer is None:
+        _default_session_indexer = SessionIndexer()
+    return _default_session_indexer

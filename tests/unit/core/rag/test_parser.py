@@ -92,6 +92,37 @@ def test_pdf_parser_file_not_found() -> None:
         parser.parse("non_existent_file.pdf")
 
 
+def test_pdf_parser_empty_text_raises(
+    temp_pdf_file: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """PDFs with no extractable text fail explicitly instead of returning []."""
+    parser = PdfParser()
+
+    monkeypatch.setattr(os.path, "exists", lambda path: True)
+
+    class MockPage:
+        def __init__(self, text: str | None) -> None:
+            self._text = text
+
+        def extract_text(self) -> str | None:
+            return self._text
+
+    class MockReader:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            self.pages = [MockPage(None), MockPage("")]
+
+    import core.rag.parser as parser_module
+
+    class MockPypdf:
+        PdfReader = MockReader
+
+    monkeypatch.setattr(parser_module, "pypdf", MockPypdf)
+    monkeypatch.setattr("builtins.open", mock_open(read_data=b"PDF contents"))
+
+    with pytest.raises(ParserException, match="no extractable text"):
+        parser.parse(temp_pdf_file)
+
+
 def test_text_parser_success(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test behavior."""
     parser = TextFileParser()
