@@ -4,6 +4,44 @@ AI Knowledge Work Assistant is a document question-answering system focused on r
 
 The project is currently focused on the RAG runtime foundation. Agent orchestration, streaming UI, and deployment automation are planned next.
 
+## System Architecture
+
+```mermaid
+flowchart TB
+
+UPLOAD["File Upload\nPDF / MD / TXT"] --> VALIDATE
+
+subgraph INGESTION [Ingestion Pipeline]
+    VALIDATE["FileValidator"] --> PARSE
+    PARSE["Parser\npypdf markdown plain"] --> CHUNK
+    CHUNK["TextChunker\nsemantic precise code"] --> EMBED
+    EMBED["SBERT Embedder\n384-dim vectors"] --> INDEX
+    INDEX["SessionIndexer\nFAISS + asyncio.Lock"]
+end
+
+QUERY["User Query"] --> QEMBED
+
+subgraph RETRIEVAL [Retrieval Pipeline]
+    QEMBED["Query Embedder\n384-dim"] --> HYBRID
+    HYBRID["HybridRetriever\n0.7 Vector + 0.3 BM25"] --> RERANK
+    RERANK["CrossEncoder Reranker\nTop-10 to Top-5"]
+end
+
+subgraph AGENT [LangGraph Agent]
+    RESEARCHER["Researcher Node\nretrieval + gap detection"] --> REPORTER
+    REPORTER["Reporter Node\nGroq LLM + citations"] --> REVIEWER
+    REVIEWER["Reviewer Node\nquality gate + retry"]
+end
+
+INDEX --> HYBRID
+RERANK --> RESEARCHER
+REVIEWER --> OUT["Grounded Answer"]
+
+style INGESTION fill:#1e3a5f,color:#fff,stroke:#4a90d9
+style RETRIEVAL fill:#1a4731,color:#fff,stroke:#4caf50
+style AGENT fill:#3d1a5f,color:#fff,stroke:#9c27b0
+```
+
 ## Current Capabilities
 
 - PDF and Markdown parsing with source metadata.
