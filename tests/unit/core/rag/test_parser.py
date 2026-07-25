@@ -8,7 +8,11 @@ from unittest.mock import mock_open
 import pytest
 
 from core.rag.parser import (
+    BaseParser,
+    CascadeParser,
+    DoclingParser,
     MarkdownParser,
+    PaddleOCRAPIParser,
     ParsedDocument,
     ParserException,
     PdfParser,
@@ -210,3 +214,60 @@ def test_text_parser_permission_error(monkeypatch: pytest.MonkeyPatch) -> None:
 
     with pytest.raises(ParserException, match="Permission denied"):
         parser.parse(file_path)
+
+
+class MockParser(BaseParser):
+    def __init__(self, content: str, confidence: float = 1.0) -> None:
+        self.content = content
+        self.confidence = confidence
+
+    def parse(self, file_path: str) -> list[ParsedDocument]:
+        if not self.content:
+            return []
+        return [ParsedDocument(page_content=self.content, metadata={"source": "mock", "confidence_score": self.confidence})]
+
+
+def test_cascade_parser_high_confidence_docling() -> None:
+    """Test that high confidence bypasses PaddleOCR."""
+    cascade = CascadeParser(confidence_threshold=0.85)
+    cascade.primary_parser = MockParser("Clean docling text", confidence=0.90)
+    # Secondary should not be called
+    cascade.secondary_parser = MockParser("Paddle text")
+    
+    docs = cascade.parse("dummy.pdf")
+    
+    assert len(docs) == 1
+    assert docs[0].metadata["cascade_status"] == "docling_accepted"
+    assert "Clean docling text" in docs[0].page_content
+
+
+def test_cascade_parser_low_confidence_high_similarity() -> None:
+    """Test low confidence docling + high similarity with paddle accepts merge."""
+    cascade = CascadeParser(confidence_threshold=0.85, similarity_threshold=0.80)
+    cascade.primary_parser = MockParser("The quick brown fox jumps", confidence=0.50)
+    cascade.secondary_parser = MockParser("The quick brown fox jumps")
+    
+    docs = cascade.parse("dummy.pdf")
+    
+    assert len(docs) == 1
+    assert docs[0].metadata["cascade_status"] == "paddleocr_accepted"
+    assert docs[0].metadata["similarity"] == 1.0
+
+
+def test_cascade_parser_low_confidence_low_similarity(monkeypatch) -> None:
+    """Test low confidence docling + low similarity escalates to Groq Arbiter."""
+    cascade = CascadeParser(confidence_threshold=0.85, similarity_threshold=0.80)
+    cascade.primary_parser = MockParser("Garbage layout 123", confidence=0.50)
+    cascade.secondary_parser = MockParser("Totally different paddleocr output")
+    
+    def mock_escalate(*args):
+        return "Groq Arbiter Output"
+        
+    monkeypatch.setattr(cascade, "_escalate_to_groq_vision", mock_escalate)
+    
+    docs = cascade.parse("dummy.pdf")
+    
+    assert len(docs) == 1
+    assert docs[0].metadata["cascade_status"] == "groq_arbiter_accepted"
+    assert "Groq Arbiter Output" in docs[0].page_content
+
