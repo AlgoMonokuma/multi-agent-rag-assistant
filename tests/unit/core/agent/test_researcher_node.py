@@ -166,3 +166,39 @@ def test_get_default_retriever_wires_shared_indexer_and_reranker(monkeypatch):
         reranker=reranker,
         final_top_n=5,
     )
+
+
+# ---------------------------------------------------------------------------
+# Story 3.4: needs_web_search flag tests
+# ---------------------------------------------------------------------------
+
+
+def test_researcher_node_sets_needs_web_search_true_when_few_chunks():
+    """AC 3: needs_web_search=True when retrieved chunks < WEB_SEARCH_THRESHOLD."""
+    from core.agent.nodes import WEB_SEARCH_THRESHOLD
+
+    # Return 1 chunk (threshold is 2, so 1 < 2 -> True)
+    chunk = _make_chunk()
+    mock_retriever = MagicMock()
+    mock_retriever.search.return_value = _make_search_result([chunk])
+
+    assert WEB_SEARCH_THRESHOLD >= 2, "Threshold must be >= 2 for this test"
+
+    state: AgentState = {"query": "q", "session_id": "s1"}
+    result = researcher_node(state, _retriever=mock_retriever)
+
+    assert result["needs_web_search"] is True
+
+
+def test_researcher_node_sets_needs_web_search_false_when_enough_chunks():
+    """AC 3: needs_web_search=False when retrieved chunks >= WEB_SEARCH_THRESHOLD."""
+    from core.agent.nodes import WEB_SEARCH_THRESHOLD
+
+    chunks = [_make_chunk(f"chunk-{i}") for i in range(WEB_SEARCH_THRESHOLD)]
+    mock_retriever = MagicMock()
+    mock_retriever.search.return_value = _make_search_result(chunks)
+
+    state: AgentState = {"query": "q", "session_id": "s1"}
+    result = researcher_node(state, _retriever=mock_retriever)
+
+    assert result["needs_web_search"] is False

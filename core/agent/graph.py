@@ -4,8 +4,10 @@ Builds and compiles the full agent StateGraph with researcher, reporter,
 and reviewer nodes. The graph is returned as a lazy-compiled singleton
 via build_graph() to mirror the reuse pattern in core/rag/reranker.py.
 
-Graph topology:
-    START -> researcher -> reporter -> reviewer -> (conditional)
+Graph topology (Story 3.4 updated):
+    START -> researcher -> (conditional: needs_web_search?)
+        -> web_search -> reporter -> reviewer -> (conditional)
+        -> reporter -> reviewer -> (conditional)
     Conditional edges from reviewer:
         review_passed=True              -> END
         review_passed=False + below max -> researcher  (retry loop)
@@ -17,7 +19,7 @@ from __future__ import annotations
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
-from core.agent.nodes import reporter_node, researcher_node, reviewer_node
+from core.agent.nodes import reporter_node, researcher_node, reviewer_node, web_search_node
 from core.agent.state import AgentState
 from core.log import get_logger
 
@@ -27,6 +29,22 @@ _DEFAULT_MAX_ITERATIONS = 3
 
 # Module-level singleton — mirroring the lazy-load pattern from CrossEncoderReranker.
 _compiled_graph: CompiledStateGraph | None = None
+
+
+def _route_after_researcher(state: AgentState) -> str:
+    """Route to web_search_node or reporter after researcher runs.
+
+    Args:
+        state: Current workflow state after researcher_node has run.
+
+    Returns:
+        "web_search" if needs_web_search is True, else "reporter".
+    """
+    if state.get("needs_web_search", False):
+        logger.debug("route_after_researcher: needs_web_search=True -> web_search")
+        return "web_search"
+    logger.debug("route_after_researcher: needs_web_search=False -> reporter")
+    return "reporter"
 
 
 def _route_after_review(state: AgentState) -> str:
@@ -70,11 +88,23 @@ def _create_graph() -> CompiledStateGraph:
     graph = StateGraph(AgentState)
 
     graph.add_node("researcher", researcher_node)
+    graph.add_node("web_search", web_search_node)  # NEW — Story 3.4
     graph.add_node("reporter", reporter_node)
     graph.add_node("reviewer", reviewer_node)
 
     graph.set_entry_point("researcher")  # equivalent to add_edge(START, "researcher")
-    graph.add_edge("researcher", "reporter")
+
+    # NEW — Story 3.4: replace direct researcher->reporter edge with conditional routing
+    graph.add_conditional_edges(
+        "researcher",
+        _route_after_researcher,
+        {
+            "web_search": "web_search",
+            "reporter": "reporter",
+        },
+    )
+    graph.add_edge("web_search", "reporter")  # NEW — Story 3.4
+
     graph.add_edge("reporter", "reviewer")
 
     graph.add_conditional_edges(

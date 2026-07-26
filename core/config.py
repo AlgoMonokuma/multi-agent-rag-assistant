@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     app_host: str = Field(default="127.0.0.1", alias="APP_HOST")
     app_port: int = Field(default=8000, alias="APP_PORT")
     streamlit_port: int = Field(default=8501, alias="STREAMLIT_PORT")
+    TAVILY_API_KEY: str = Field(
+        default="",
+        alias="TAVILY_API_KEY",
+    )
+    """Tavily API key for web search fallback. Leave empty to disable web search."""
 
     model_config = SettingsConfigDict(
         env_file=".env",

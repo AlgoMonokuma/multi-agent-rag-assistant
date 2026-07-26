@@ -4,6 +4,7 @@ Each node accepts an AgentState dict and returns a partial state update.
 
 Current implementation status:
   - researcher_node -> real (HybridRetriever — implemented in Story 3.3)
+  - web_search_node -> real (Tavily web search fallback — implemented in Story 3.4)
   - reporter_node   -> real (LLMGenerator / Groq — implemented in Story 3.2)
   - reviewer_node   -> stub (Reviewer LLM / quality gate deferred to Story 3.6)
 
@@ -23,6 +24,13 @@ logger = get_logger(__name__)
 # Never call _get_default_retriever() at import time — it loads sentence-transformers
 # and faiss eagerly which slows all tests and breaks the lazy-load guarantee.
 _default_retriever = None
+
+# Module-level sentinel for lazy default web search client construction.
+# Never construct at import time — keeps Tavily SDK out of the import chain.
+_default_web_search_client = None
+
+WEB_SEARCH_THRESHOLD = 2
+"""researcher_node sets needs_web_search=True when retrieved chunks < this value."""
 
 
 def _get_default_retriever():
@@ -54,6 +62,34 @@ def _get_default_retriever():
     return _default_retriever
 
 
+def _get_default_web_search_client():
+    """Return the module-level Tavily search client, constructing it lazily on first call.
+
+    Returns:
+        TavilySearchAPIWrapper configured with TAVILY_API_KEY from settings.
+
+    Raises:
+        WebSearchException: If TAVILY_API_KEY is not set in environment.
+    """
+    global _default_web_search_client
+    if _default_web_search_client is None:
+        from core.agent.exceptions import WebSearchException  # noqa: PLC0415
+        from core.config import settings  # noqa: PLC0415
+
+        if not settings.TAVILY_API_KEY:
+            raise WebSearchException(
+                "TAVILY_API_KEY is not set. "
+                "Set TAVILY_API_KEY in your .env file to enable web search."
+            )
+
+        from langchain_tavily import TavilySearchAPIWrapper  # noqa: PLC0415
+
+        _default_web_search_client = TavilySearchAPIWrapper(
+            tavily_api_key=settings.TAVILY_API_KEY
+        )
+    return _default_web_search_client
+
+
 def researcher_node(state: AgentState, *, _retriever=None) -> dict:
     """Retrieve relevant chunks for the user query.
 
@@ -61,6 +97,9 @@ def researcher_node(state: AgentState, *, _retriever=None) -> dict:
     session_id and query extracted from state.  Fails open — returns
     retrieved_chunks=[] — on RetrieverException or RerankerException so
     the graph continues to the reporter node.
+
+    Also sets needs_web_search=True when the retrieved chunk count falls below
+    WEB_SEARCH_THRESHOLD, triggering the web_search_node fallback.
 
     Note on re-ranking: CrossEncoderReranker is injected into HybridRetriever
     at construction time (via _get_default_retriever). The retriever calls
@@ -76,9 +115,10 @@ def researcher_node(state: AgentState, *, _retriever=None) -> dict:
                     keyword-only injection is safe for production use.
 
     Returns:
-        Partial state update with retrieved_chunks (list[RetrievedChunk])
-        and an iteration_count increment of 1. iteration_count is always
-        returned as 1 to drive the operator.add reducer correctly.
+        Partial state update with retrieved_chunks (list[RetrievedChunk]),
+        an iteration_count increment of 1, and needs_web_search (bool).
+        needs_web_search=True when chunk count < WEB_SEARCH_THRESHOLD or
+        on retrieval error (fail-open triggers web search fallback).
     """
     from core.rag.reranker import RerankerException  # noqa: PLC0415
     from core.rag.retriever import RetrieverException  # noqa: PLC0415
@@ -99,26 +139,79 @@ def researcher_node(state: AgentState, *, _retriever=None) -> dict:
         chunks = search_result.results
     except (RetrieverException, RerankerException) as exc:
         logger.error("researcher_node: retrieval failed: %s", exc)
-        return {"retrieved_chunks": [], "iteration_count": 1}
+        # Fail-open: empty chunks always triggers web search
+        return {"retrieved_chunks": [], "iteration_count": 1, "needs_web_search": True}
 
+    chunk_count = len(chunks)
+    needs_web_search = chunk_count < WEB_SEARCH_THRESHOLD
     logger.debug(
-        "researcher_node: retrieved %d chunks for session %r",
-        len(chunks),
-        session_id,
+        "researcher_node: retrieved %d chunks, needs_web_search=%s",
+        chunk_count,
+        needs_web_search,
     )
 
-    return {"retrieved_chunks": list(chunks), "iteration_count": 1}
+    return {
+        "retrieved_chunks": list(chunks),
+        "iteration_count": 1,
+        "needs_web_search": needs_web_search,
+    }
+
+
+def web_search_node(state: AgentState, *, _client=None) -> dict:
+    """Perform live web search when local context is insufficient.
+
+    Called only when researcher_node sets needs_web_search=True.
+    Fails open (returns web_search_results=[]) on any error so the
+    graph continues to reporter_node.
+
+    Args:
+        state: Current workflow state containing query.
+        _client: Optional pre-built TavilySearchAPIWrapper for test injection.
+                 When None, the default client is constructed lazily.
+                 LangGraph only passes state positionally — keyword-only is safe.
+
+    Returns:
+        Partial state update with web_search_results (list[dict]).
+        Each dict contains: url (str), content (str), score (float).
+    """
+    from core.agent.exceptions import WebSearchException  # noqa: PLC0415
+
+    query = state.get("query", "")
+    logger.debug("web_search_node: query=%r", query)
+
+    try:
+        client = _client or _get_default_web_search_client()
+        raw_results = client.results(query=query, max_results=5)
+        results = [
+            {
+                "url": r.get("url", ""),
+                "content": r.get("content", ""),
+                "score": r.get("score", 0.0),
+            }
+            for r in (raw_results or [])
+            if isinstance(r, dict)
+        ]
+    except WebSearchException as exc:
+        logger.error("web_search_node: configuration error: %s", exc)
+        return {"web_search_results": []}
+    except Exception as exc:  # noqa: BLE001
+        logger.error("web_search_node: search failed: %s", exc)
+        return {"web_search_results": []}
+
+    logger.debug("web_search_node: got %d web results", len(results))
+    return {"web_search_results": results}
 
 
 def reporter_node(state: AgentState) -> dict:
     """Generate a draft answer from retrieved chunks using LLMGenerator.
 
     Calls LLMGenerator (Groq) to produce a grounded answer from the
-    retrieved and re-ranked chunks stored in state.
+    retrieved and re-ranked chunks stored in state. Also merges any
+    web_search_results from web_search_node into the LLM prompt context.
 
     Args:
         state: Current workflow state containing retrieved_chunks, query,
-               and session_id.
+               session_id, and optionally web_search_results.
 
     Returns:
         Partial state update with draft_answer (str) and citations (list[dict]).
@@ -129,13 +222,24 @@ def reporter_node(state: AgentState) -> dict:
 
     query = state.get("query", "")
     chunks = state.get("retrieved_chunks") or []
+    web_results = state.get("web_search_results") or []  # NEW — Story 3.4
     session_id = state.get("session_id", "")
 
-    logger.debug("reporter_node: chunk_count=%d session_id=%r", len(chunks), session_id)
+    logger.debug(
+        "reporter_node: chunk_count=%d web_result_count=%d session_id=%r",
+        len(chunks),
+        len(web_results),
+        session_id,
+    )
 
     generator = LLMGenerator()
     try:
-        result = generator.generate(query=query, chunks=chunks, session_id=session_id)
+        result = generator.generate(
+            query=query,
+            chunks=chunks,
+            session_id=session_id,
+            web_context=web_results,  # NEW — Story 3.4
+        )
     except GeneratorException as exc:
         logger.error("reporter_node: generation failed: %s", exc)
         return {

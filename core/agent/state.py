@@ -55,3 +55,9 @@ class AgentState(TypedDict, total=False):
 
     final_answer: str
     """Confirmed answer after review passes; set by reviewer_node."""
+
+    needs_web_search: bool
+    """Set by researcher_node when retrieved chunks < WEB_SEARCH_THRESHOLD."""
+
+    web_search_results: list
+    """Web search snippets from web_search_node; consumed by reporter_node."""

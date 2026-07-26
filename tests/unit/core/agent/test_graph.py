@@ -18,7 +18,7 @@ from typing import get_type_hints
 
 import pytest
 
-from core.agent.graph import build_graph, _route_after_review
+from core.agent.graph import build_graph, _route_after_researcher, _route_after_review
 from core.agent.state import AgentState
 
 
@@ -85,6 +85,8 @@ def test_agent_state_is_typed_dict():
         "iteration_count",
         "max_iterations",
         "final_answer",
+        "needs_web_search",
+        "web_search_results",
     }
     declared = set(AgentState.__annotations__.keys())
     assert expected_keys == declared, (
@@ -107,10 +109,10 @@ def test_agent_state_iteration_count_uses_add_reducer():
 # ---------------------------------------------------------------------------
 
 def test_graph_has_expected_nodes():
-    """AC3: compiled graph contains exactly researcher, reporter, reviewer nodes."""
+    """AC3: compiled graph contains researcher, reporter, reviewer, web_search nodes."""
     graph = build_graph()
     nodes = graph.get_graph().nodes
-    for required in ("researcher", "reporter", "reviewer"):
+    for required in ("researcher", "reporter", "reviewer", "web_search"):
         assert required in nodes, f"Node '{required}' missing from compiled graph"
 
 
@@ -226,3 +228,20 @@ def test_routing_default_max_when_missing():
     assert result == "researcher", (
         f"Expected 'researcher' loop when iteration_count=1 and default max=3, got {result!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Story 3.4: _route_after_researcher routing tests
+# ---------------------------------------------------------------------------
+
+
+def test_route_after_researcher_returns_web_search_when_flag_true():
+    """AC 4: _route_after_researcher routes to web_search when needs_web_search=True."""
+    state: AgentState = {"needs_web_search": True}
+    assert _route_after_researcher(state) == "web_search"
+
+
+def test_route_after_researcher_returns_reporter_when_flag_false():
+    """AC 4: _route_after_researcher routes to reporter when needs_web_search=False."""
+    state: AgentState = {"needs_web_search": False}
+    assert _route_after_researcher(state) == "reporter"

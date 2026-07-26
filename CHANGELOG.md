@@ -20,6 +20,12 @@ The project uses semantic versioning while it is pre-1.0:
 - Story 3.2 LLM answer generation with Groq-backed grounded answers,
   citation-aware prompt assembly, token-budget handling, and generator failure
   fallbacks.
+- Story 3.3 agent researcher node with HybridRetriever integration,
+  CrossEncoderReranker wiring, lazy retriever singleton, and session-aware
+  retrieval.
+- Story 3.4 MCP web search tool integration with TavilySearchAPIWrapper,
+  lazy web search client, conditional graph routing, and web context merge
+  in LLM prompt.
 
 ### Changed
 - Keyword tokenization now preserves ASCII, Japanese kana, and Korean Hangul
@@ -27,7 +33,7 @@ The project uses semantic versioning while it is pre-1.0:
 
 ### Planned
 - PDF parser image and table support — see [Issue #1](https://github.com/AlgoMonokuma/multi-agent-rag-assistant/issues/1).
-- Epic 3: Agent Workflow prototype implementation.
+- Epic 3 remaining stories: reviewer/quality gate (3.5), streaming endpoint (4.2).
 
 ## v0.2.2 - 2026-06-11
 

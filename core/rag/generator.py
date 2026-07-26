@@ -113,14 +113,20 @@ class LLMGenerator:
         query: str,
         chunks: Optional[List[Any]],
         session_id: str,
+        web_context: Optional[List[dict]] = None,
     ) -> GeneratorResponse:
         """Generate a grounded answer from retrieved chunks.
 
         Args:
-            query:      The user's original question.
-            chunks:     Ordered list of ``RetrievedChunk`` objects from
-                        ``HybridRetriever`` / ``CrossEncoderReranker``.
-            session_id: Used only for log context; never sent to Groq.
+            query:       The user's original question.
+            chunks:      Ordered list of ``RetrievedChunk`` objects from
+                         ``HybridRetriever`` / ``CrossEncoderReranker``.
+            session_id:  Used only for log context; never sent to Groq.
+            web_context: Optional list of web search result dicts from
+                         web_search_node (Story 3.4). Each dict has
+                         ``url``, ``content``, and ``score`` keys.
+                         Appended to the prompt context block when non-empty.
+                         Defaults to None (backward-compatible).
 
         Returns:
             A ``GeneratorResponse`` with ``answer`` and ``citations``.
@@ -133,9 +139,11 @@ class LLMGenerator:
                                 API key is missing / misconfigured.
         """
         # AC 6: graceful empty-context fallback — no API call
-        if not chunks:
+        # Story 3.4: if web_context is provided, skip the no-chunks fallback so
+        # web results can still be used to generate an answer.
+        if not chunks and not web_context:
             logger.info(
-                "LLMGenerator.generate: no chunks provided for session %s; returning fallback.",
+                "LLMGenerator.generate: no chunks or web context for session %s; returning fallback.",
                 session_id,
             )
             return GeneratorResponse(
@@ -151,14 +159,16 @@ class LLMGenerator:
         # Build prompt and track which chunks were actually admitted
         # Issue 3 fix: _build_prompt now returns admitted_chunks alongside messages,
         # so citations only reference chunks present in the prompt.
-        prompt_result = self._build_prompt(query, chunks, self._token_budget)
+        # Story 3.4: pass web_context so web snippets are appended to the context block.
+        prompt_result = self._build_prompt(query, chunks or [], self._token_budget, web_context)
         messages = prompt_result.messages
         admitted_chunks = prompt_result.admitted_chunks
 
         # Issue 4 fix: if the first chunk alone exceeded the budget, admitted_chunks
         # is empty — the context block reads "(no context available)".  In that case
         # calling the LLM is wasteful and misleading; return the no-context fallback.
-        if not admitted_chunks:
+        # Story 3.4: skip this fallback if web_context has content (web results compensate).
+        if not admitted_chunks and not web_context:
             logger.warning(
                 "LLMGenerator.generate: all chunks exceeded token budget=%d for session %s; "
                 "returning fallback without API call.",
@@ -260,6 +270,7 @@ class LLMGenerator:
         query: str,
         chunks: List[Any],
         token_budget: int,
+        web_context: Optional[List[dict]] = None,
     ) -> _PromptResult:
         """Assemble a system + user message pair respecting the token budget.
 
@@ -273,10 +284,15 @@ class LLMGenerator:
         Issue 2 fix: each context block now includes both ``[Source: …]``
         and ``[Chunk ID: …]`` so the model can produce precise references.
 
+        Story 3.4: optional ``web_context`` list of dicts is appended as a
+        ``## Web Search Results`` section after the RAG context block.
+
         Args:
             query:        The user's question.
             chunks:       ``RetrievedChunk`` objects ordered by relevance.
             token_budget: Maximum total context tokens to include.
+            web_context:  Optional web search results from web_search_node.
+                          Each dict has ``url``, ``content``, ``score`` keys.
 
         Returns:
             A ``_PromptResult(messages, admitted_chunks)`` named-tuple.
@@ -303,11 +319,22 @@ class LLMGenerator:
         )
         user_content = f"Context:\n{context_block}\n\nQuestion: {query}"
 
+        # Story 3.4: append web search results section when present
+        if web_context:
+            web_section = "\n\n## Web Search Results\n"
+            for item in web_context[:5]:  # cap at 5 to respect token budget
+                if not isinstance(item, dict):
+                    continue
+                web_section += f"Source: {item.get('url', 'unknown')}\n"
+                web_section += f"{item.get('content', '')}\n\n"
+            user_content += web_section
+
         messages: List[dict] = [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_content},
         ]
         return _PromptResult(messages=messages, admitted_chunks=admitted_chunks)
+
 
     @staticmethod
     def _extract_citations(chunks: List[Any]) -> List[CitationRef]:
