@@ -19,3 +19,7 @@ htmlcov/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# BMAD development artifacts (internal workflow only, not for GitHub)
+_bmad-output/
+_bmad/
