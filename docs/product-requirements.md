@@ -83,7 +83,7 @@ All other file types must be rejected before any parsing is attempted. Validatio
 | FR10 | Add agent workflow orchestration. | Foundation complete — Epic 3 |
 | FR11 | Add streaming answer experience with reasoning trace. | Planned — Epic 4 |
 | FR12 | Persist session state to disk so users can resume after browser reload or server restart. | Planned — Epic 5 |
-| FR13 | Support plain-text (.txt) file upload in addition to PDF and Markdown. | Planned — Epic 3 |
+| FR13 | Support plain-text (.txt) file upload in addition to PDF and Markdown. | Complete |
 | FR14 | Support fallback OCR and image description for PDFs with embedded images or scanned pages. | Planned — Epic 3 (Issue #1) |
 
 ## Quality Requirements

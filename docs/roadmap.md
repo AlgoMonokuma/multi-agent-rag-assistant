@@ -78,7 +78,7 @@ Planned direction:
 | [3.1.1](stories/3-1-1-multilingual-embedding-and-cjk-tokenization.md) | Multilingual embedding and CJK tokenization | Complete |
 | [3.1.2](stories/3-1-2-plain-text-parser-support.md) | Plain-text parser support | Complete |
 | [3.2](stories/3-2-llm-answer-generation.md) | LLM answer generation | Complete |
-| [3.3](_bmad-output/implementation-artifacts/3-3-agent-researcher-implementation.md) | Agent Researcher Implementation | Complete |
+| [3.3](stories/3-3-agent-researcher-implementation.md) | Agent Researcher Implementation | Complete |
 
 ## Known Scope Gaps & Backlog
 

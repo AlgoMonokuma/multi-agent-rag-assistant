@@ -20,3 +20,4 @@ These are public story and near-term engineering task specifications derived fro
 | [3.1.1](3-1-1-multilingual-embedding-and-cjk-tokenization.md) | Multilingual embedding and CJK tokenization | Complete |
 | [3.1.2](3-1-2-plain-text-parser-support.md) | Plain-text parser support | Complete |
 | [3.2](3-2-llm-answer-generation.md) | LLM answer generation | Complete |
+| [3.3](3-3-agent-researcher-implementation.md) | Agent researcher implementation | Complete |

@@ -151,5 +151,4 @@ The system employs heterogeneous validation across two levels to ensure robustne
 - FAISS write serialization (asyncio.Lock) is planned before any concurrent API endpoint exposes ingestion.
 - Session persistence (disk-backed index) is planned for Epic 5.
 - File upload validation (magic-byte check) is planned for Epic 4 API layer.
-- Researcher-node retrieval integration is still planned after the generator foundation.
 - Heterogeneous Evaluation Framework (Story 5.5) is required to quantitatively measure RAG quality.
