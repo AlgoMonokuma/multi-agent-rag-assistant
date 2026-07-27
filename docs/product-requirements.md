@@ -80,7 +80,7 @@ All other file types must be rejected before any parsing is attempted. Validatio
 | FR7 | Add runtime hardening around metadata, partial updates, and parameter boundaries. | Complete |
 | FR8 | Validate uploaded files by extension whitelist and magic-byte verification before parsing. | Planned — Epic 4 |
 | FR9 | Generate LLM answers from re-ranked context chunks with citation mapping. | Complete |
-| FR10 | Add agent workflow orchestration. | Foundation complete — Epic 3 |
+| FR10 | Add agent workflow orchestration including retrieval, web search fallback, and conditional routing. | Complete — Epic 3 |
 | FR11 | Add streaming answer experience with reasoning trace. | Planned — Epic 4 |
 | FR12 | Persist session state to disk so users can resume after browser reload or server restart. | Planned — Epic 5 |
 | FR13 | Support plain-text (.txt) file upload in addition to PDF and Markdown. | Complete |

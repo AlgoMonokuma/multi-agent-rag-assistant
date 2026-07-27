@@ -8,9 +8,9 @@
 | `v0.2.0` | RAG runtime foundation | Parser, indexing, chunking, hybrid retrieval, profiles, and re-ranking are documented and tested. |
 | `v0.2.1` | RAG runtime hardening | Story 2.5.1 guardrails are complete and tests pass. |
 | `v0.2.2` | Codebase language normalization | Engineering Task 2.5.2 is complete; all comments, docstrings, and tests use consistent English. |
-| `v0.3.0` | Complete RAG Agent prototype | Stories 3.1 (LangGraph foundation), 3.1.1 (multilingual + CJK), 3.1.2 (TXT parser), 3.2 (LLM generation), and 3.3 (Researcher Agent) are complete. The system can complete a full retrieval → research → answer loop end-to-end. |
+| `v0.3.0` | Complete RAG Agent prototype | Stories 3.1 (LangGraph foundation), 3.1.1 (multilingual + CJK), 3.1.2 (TXT parser), 3.2 (LLM generation), 3.3 (Researcher Agent), and 3.4 (MCP web search) are complete. The system can complete a full retrieval → research → answer loop with web search fallback end-to-end. |
 | `v0.4.0` | Advanced workflow + streaming UI | Story 3.5 (Reviewer quality gate), Stories 4.1–4.4 (Streamlit UI, SSE streaming, citation rendering) are usable. |
-| `v0.5.0` | External search + deployable demo | Story 3.4 (MCP web search), Docker, CI, session persistence (Story 5.1), and hosting path are ready. |
+| `v0.5.0` | Deployable demo | Docker, CI, session persistence (Story 5.1), and hosting path are ready. |
 | `v1.0.0` | Interview demo release | End-to-end demo is stable, documented, and easy to run. |
 
 ## Future Epic Direction
@@ -26,10 +26,10 @@ Goal: Build a complete multi-agent reasoning workflow on top of the hardened RAG
 - **Story 3.1.2** ✅: Plain-text (`.txt`) parser — allows users to upload plain documents in addition to PDF and Markdown.
 - **Story 3.2** ✅: LLM answer generation using Groq API — prompt assembly, context budget management, citation mapping, and graceful API failure handling.
 - **Story 3.3** ✅: Researcher Agent — queries the RAG retriever, identifies information gaps, and passes grounded context to the reporter node. This completes the first real end-to-end agent loop.
+- **Story 3.4** ✅: MCP web search tool integration — when local context is insufficient, the researcher can invoke an external Tavily web search. Includes conditional graph routing and web context merge in the LLM prompt.
 
-**Post v0.3.0 (planned for v0.4.0 / v0.5.0):**
+**Post v0.3.0 (planned for v0.4.0):**
 
-- **Story 3.4**: MCP web search tool integration — when local context is insufficient, the researcher can invoke an external search tool.
 - **Story 3.5**: Reviewer quality gate — a dedicated agent validates the reporter's answer against user intent before final output.
 
 ### Epic 4: Streaming User Experience
@@ -79,6 +79,7 @@ Planned direction:
 | [3.1.2](stories/3-1-2-plain-text-parser-support.md) | Plain-text parser support | Complete |
 | [3.2](stories/3-2-llm-answer-generation.md) | LLM answer generation | Complete |
 | [3.3](stories/3-3-agent-researcher-implementation.md) | Agent Researcher Implementation | Complete |
+| [3.4](stories/3-4-mcp-web-search-tool-integration.md) | MCP Web Search Tool Integration | Complete |
 
 ## Known Scope Gaps & Backlog
 

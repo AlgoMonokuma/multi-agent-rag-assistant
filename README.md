@@ -2,7 +2,7 @@
 
 AI Knowledge Work Assistant is a document question-answering system focused on retrieval quality, session isolation, and traceable answers. Users upload PDF or Markdown files, the system parses and indexes the content, and the RAG pipeline retrieves relevant passages through hybrid search and cross-encoder re-ranking.
 
-The project is currently focused on the RAG runtime foundation. Agent orchestration, streaming UI, and deployment automation are planned next.
+The project has completed the core RAG runtime foundation and the agent workflow prototype (Epic 3), including LangGraph orchestration, Groq-backed answer generation, and Tavily web search fallback. Streaming UI and deployment automation are planned next.
 
 ## System Architecture
 
@@ -52,7 +52,7 @@ style AGENT fill:#3d1a5f,color:#fff,stroke:#9c27b0
 - Cross-encoder re-ranking for improving final retrieval order.
 - Runtime guardrails for ingestion failure handling, citation metadata, retrieval boundaries, and re-ranking failures.
 - English developer-facing comments, logs, exceptions, and tests for cleaner public review.
-- LangGraph agent workflow foundation with researcher, reporter, and reviewer stub nodes.
+- LangGraph agent workflow with real researcher node (HybridRetriever integration), Groq-backed reporter node, and Tavily web search fallback with conditional graph routing.
 - Multilingual retrieval foundation using `paraphrase-multilingual-MiniLM-L12-v2` and CJK-aware keyword tokenization.
 - Groq-backed answer generation with citation-aware prompt assembly and graceful fallback handling.
 - Unit tests for parser, chunker, embeddings, indexing, retrieval, re-ranking, and runtime hardening behavior.
@@ -82,6 +82,11 @@ app/
 core/
   config.py               Environment-driven settings
   log.py                  Shared logger
+  agent/
+    nodes.py              Node functions for LangGraph agent workflow
+    graph.py              StateGraph factory with conditional routing
+    state.py              AgentState TypedDict schema
+    exceptions.py         WebSearchException domain exception
   rag/
     parser.py             PDF and Markdown parsing
     chunker.py            Text chunking and chunking profiles
@@ -144,6 +149,6 @@ uv run streamlit run app/main.py
 
 ## Development Status
 
-The repository has completed the main Epic 2 RAG runtime stories, runtime hardening, codebase language normalization, Story 3.1 LangGraph workflow foundation, Story 3.1.1 multilingual retrieval foundation, and Story 3.2 LLM answer generation. The next planned direction is the remaining Epic 3 parser and agent-integration work.
+The repository has completed Epics 1–3: RAG runtime foundation, runtime hardening, codebase normalization, LangGraph agent workflow (researcher, reporter, web search), multilingual retrieval, and LLM answer generation. The next planned direction is the Epic 4 streaming UI and Story 3.5 reviewer quality gate.
 
 See [docs/roadmap.md](docs/roadmap.md) for the versioning plan.
